@@ -7,6 +7,8 @@ export interface User {
   username: string
   role: "ADMIN" | "USER"
   active: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 export interface UpdateUserRequest {
