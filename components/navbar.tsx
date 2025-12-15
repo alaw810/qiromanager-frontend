@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { LogOut, LayoutDashboard, Users, Menu, X, User } from "lucide-react"
+import { LogOut, LayoutDashboard, Users, Menu, X, User, UserCircle } from "lucide-react"
 import { useState } from "react"
 
 export function NavBar() {
@@ -32,6 +32,7 @@ export function NavBar() {
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
             </Link>
+
             <Link
               href="/patients"
               className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
@@ -39,6 +40,7 @@ export function NavBar() {
               <User className="h-4 w-4" />
               Patients
             </Link>
+
             {isAdmin && (
               <Link
                 href="/users"
@@ -48,9 +50,20 @@ export function NavBar() {
                 Users
               </Link>
             )}
+
+            {/* NEW: Profile button */}
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+            >
+              <UserCircle className="h-4 w-4" />
+              Profile
+            </Link>
+
+            {/* Divider + user info */}
             <div className="ml-4 flex items-center gap-3 border-l border-border pl-4">
-              <span className="text-sm text-muted-foreground">
-                {user?.username}{" "}
+              <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                {user?.username}
                 <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
                   {user?.role}
                 </span>
@@ -82,6 +95,7 @@ export function NavBar() {
                 <LayoutDashboard className="h-4 w-4" />
                 Dashboard
               </Link>
+
               <Link
                 href="/patients"
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
@@ -90,6 +104,7 @@ export function NavBar() {
                 <User className="h-4 w-4" />
                 Patients
               </Link>
+
               {isAdmin && (
                 <Link
                   href="/users"
@@ -100,6 +115,17 @@ export function NavBar() {
                   Users
                 </Link>
               )}
+
+              {/* NEW: Profile in mobile */}
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <UserCircle className="h-4 w-4" />
+                Profile
+              </Link>
+
               <div className="mt-2 border-t border-border pt-2">
                 <div className="px-3 py-2 text-sm text-muted-foreground">
                   Logged in as {user?.username} ({user?.role})
