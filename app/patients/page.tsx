@@ -66,12 +66,16 @@ function PatientsPageContent() {
     }
   }
 
+  const handlePatientUpdated = (updatedPatient: Patient) => {
+    setPatients((prevPatients) => prevPatients.map((p) => (p.id === updatedPatient.id ? updatedPatient : p)))
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Patients</h1>
-          <p className="mt-2 text-muted-foreground">Manage your massage therapy patients</p>
+          <p className="mt-2 text-muted-foreground">Manage your patients</p>
         </div>
         <Link href="/patients/new">
           <Button>
@@ -137,7 +141,7 @@ function PatientsPageContent() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {patients.map((patient) => (
-            <PatientCard key={patient.id} patient={patient} />
+            <PatientCard key={patient.id} patient={patient} onPatientUpdated={handlePatientUpdated} />
           ))}
         </div>
       )}
