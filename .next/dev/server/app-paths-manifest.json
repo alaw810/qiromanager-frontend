@@ -1,0 +1,9 @@
+{
+  "/access-denied/page": "app/access-denied/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/login/page": "app/login/page.js",
+  "/patients/[id]/page": "app/patients/[id]/page.js",
+  "/patients/new/page": "app/patients/new/page.js",
+  "/patients/page": "app/patients/page.js",
+  "/users/page": "app/users/page.js"
+}
