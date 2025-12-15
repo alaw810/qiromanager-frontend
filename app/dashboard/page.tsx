@@ -1,7 +1,6 @@
 "use client"
 
 import { PrivateRoute } from "@/components/auth/private-route"
-import { NavBar } from "@/components/navbar"
 import { useAuth } from "@/contexts/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LayoutDashboard, Users, Settings, Activity } from "lucide-react"
@@ -18,7 +17,6 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <NavBar />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>

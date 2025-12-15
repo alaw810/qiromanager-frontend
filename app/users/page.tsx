@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { AdminRoute } from "@/components/auth/admin-route"
-import { NavBar } from "@/components/navbar"
 import { usersApi, type User } from "@/lib/api/users-api"
 import { getErrorMessage } from "@/lib/api/axios-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -50,12 +49,13 @@ function UsersContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <NavBar />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Users Management</h1>
-            <p className="mt-2 text-muted-foreground">View and manage all registered users in the system.</p>
+            <p className="mt-2 text-muted-foreground">
+              View and manage all registered users in the system.
+            </p>
           </div>
           <Button onClick={fetchUsers} variant="outline" disabled={isLoading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -92,7 +92,7 @@ function UsersContent() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[80px]">ID</TableHead>
+                      <TableHead className="w-20">ID</TableHead>
                       <TableHead>Full Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Username</TableHead>
@@ -101,6 +101,7 @@ function UsersContent() {
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
+
                   <TableBody>
                     {users.map((user) => (
                       <TableRow key={user.id}>
@@ -109,18 +110,23 @@ function UsersContent() {
                         <TableCell className="text-muted-foreground">{user.email}</TableCell>
                         <TableCell>{user.username}</TableCell>
                         <TableCell>
-                          <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>{user.role}</Badge>
+                          <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
+                            {user.role}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge
                             variant={user.active ? "default" : "destructive"}
                             className={
-                              user.active ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : ""
+                              user.active
+                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                : ""
                             }
                           >
                             {user.active ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
+
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Link href={`/users/${user.id}/edit`}>
@@ -128,6 +134,7 @@ function UsersContent() {
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
+
                             <Button
                               variant="ghost"
                               size="sm"
