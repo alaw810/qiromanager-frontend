@@ -12,6 +12,7 @@ import { PrivateRoute } from "@/components/auth/private-route"
 import { patientsApi, type Patient } from "@/lib/api/patients-api"
 import { getErrorMessage } from "@/lib/api/axios-client"
 import { Plus, Loader2, Search, X } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 function PatientsPageContent() {
   const [patients, setPatients] = useState<Patient[]>([])
@@ -19,6 +20,28 @@ function PatientsPageContent() {
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
+
+  const { toast } = useToast()
+
+  // ⭐ INFALLIBLE TOAST HANDLER: works with SSR/CSR/full reloads
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const url = new URL(window.location.href)
+    const removed = url.searchParams.get("removed")
+
+    if (removed === "1") {
+      setTimeout(() => {
+        toast({
+          title: "Patient removed from your list",
+        })
+      }, 30)
+
+      // Clean the URL so the toast doesn't repeat on refresh
+      url.searchParams.delete("removed")
+      window.history.replaceState({}, "", url.toString())
+    }
+  }, [toast])
 
   const loadPatients = useCallback(async () => {
     try {
@@ -67,7 +90,9 @@ function PatientsPageContent() {
   }
 
   const handlePatientUpdated = (updatedPatient: Patient) => {
-    setPatients((prevPatients) => prevPatients.map((p) => (p.id === updatedPatient.id ? updatedPatient : p)))
+    setPatients((prev) =>
+      prev.map((p) => (p.id === updatedPatient.id ? updatedPatient : p)),
+    )
   }
 
   return (
@@ -141,7 +166,11 @@ function PatientsPageContent() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {patients.map((patient) => (
-            <PatientCard key={patient.id} patient={patient} onPatientUpdated={handlePatientUpdated} />
+            <PatientCard
+              key={patient.id}
+              patient={patient}
+              onPatientUpdated={handlePatientUpdated}
+            />
           ))}
         </div>
       )}

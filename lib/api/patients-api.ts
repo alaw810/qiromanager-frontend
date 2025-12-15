@@ -71,4 +71,9 @@ export const patientsApi = {
     const response = await axiosClient.post<Patient>(`/api/v1/patients/${patientId}/assign`)
     return response.data
   },
+
+  async unassignFromMe(patientId: number): Promise<void> {
+  await axiosClient.delete(`/api/v1/patients/${patientId}/assign`)
+},
+
 }

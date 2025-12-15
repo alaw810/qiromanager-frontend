@@ -11,16 +11,31 @@ import { PrivateRoute } from "@/components/auth/private-route"
 import { useAuth } from "@/contexts/auth-context"
 import { patientsApi, type Patient } from "@/lib/api/patients-api"
 import { getErrorMessage } from "@/lib/api/axios-client"
-import { Loader2, Edit, UserX, UserCheck, Mail, Phone, MapPin, Calendar, Users, UserPlus } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import {
+  Loader2,
+  Edit,
+  UserX,
+  UserCheck,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Users,
+  UserPlus,
+} from "lucide-react"
 
 function PatientDetailsContent() {
   const router = useRouter()
   const params = useParams()
   const { isAdmin, user } = useAuth()
+  const { toast } = useToast()
+
   const [patient, setPatient] = useState<Patient | null>(null)
   const [loading, setLoading] = useState(true)
   const [statusLoading, setStatusLoading] = useState(false)
   const [assignLoading, setAssignLoading] = useState(false)
+  const [unassignLoading, setUnassignLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const patientId = Number(params.id)
@@ -60,9 +75,9 @@ function PatientDetailsContent() {
 
     try {
       setAssignLoading(true)
-      setError(null)
       await patientsApi.assignToMe(patient.id)
       await loadPatient()
+      toast({ title: "Patient added to your list" })
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
@@ -70,7 +85,34 @@ function PatientDetailsContent() {
     }
   }
 
-  const isAlreadyAssigned = patient?.therapists?.some((therapist) => therapist.id === user?.id)
+  const handleUnassignFromMe = async () => {
+    if (!patient) return
+
+    const confirmed = window.confirm(
+      "Are you sure you want to remove this patient from your list?",
+    )
+    if (!confirmed) return
+
+    try {
+      setUnassignLoading(true)
+      await patientsApi.unassignFromMe(patient.id)
+
+      // Redirect – toast will be shown on the inbox page.
+      router.push("/patients?removed=1")
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(err),
+        variant: "destructive",
+      })
+    } finally {
+      setUnassignLoading(false)
+    }
+  }
+
+  const isAlreadyAssigned = patient?.therapists?.some(
+    (therapist) => therapist.id === user?.id,
+  )
 
   if (loading) {
     return (
@@ -117,6 +159,22 @@ function PatientDetailsContent() {
               Edit
             </Button>
           </Link>
+
+          {isAlreadyAssigned && (
+            <Button
+              variant="destructive"
+              disabled={unassignLoading}
+              onClick={handleUnassignFromMe}
+            >
+              {unassignLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <UserX className="mr-2 h-4 w-4" />
+              )}
+              Remove from your patients
+            </Button>
+          )}
+
           {isAdmin && (
             <Button
               variant={patient.active ? "destructive" : "default"}
@@ -147,7 +205,9 @@ function PatientDetailsContent() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Basic Information</CardTitle>
-              <Badge variant={patient.active ? "default" : "secondary"}>{patient.active ? "Active" : "Inactive"}</Badge>
+              <Badge variant={patient.active ? "default" : "secondary"}>
+                {patient.active ? "Active" : "Inactive"}
+              </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -155,7 +215,9 @@ function PatientDetailsContent() {
               <Calendar className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
-                <p className="text-base">{new Date(patient.dateOfBirth).toLocaleDateString()}</p>
+                <p className="text-base">
+                  {new Date(patient.dateOfBirth).toLocaleDateString()}
+                </p>
               </div>
             </div>
 
@@ -214,13 +276,16 @@ function PatientDetailsContent() {
           </CardContent>
         </Card>
 
+
         {patient.generalNotes && (
           <Card>
             <CardHeader>
               <CardTitle>General Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap text-muted-foreground">{patient.generalNotes}</p>
+              <p className="whitespace-pre-wrap text-muted-foreground">
+                {patient.generalNotes}
+              </p>
             </CardContent>
           </Card>
         )}
