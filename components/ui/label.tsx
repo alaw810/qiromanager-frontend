@@ -1,9 +1,16 @@
 'use client'
 
-import * as React from 'react'
-import * as LabelPrimitive from '@radix-ui/react-label'
+import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { cn } from "@/lib/utils"
 
-import { cn } from '@/lib/utils'
+/**
+ * QIROMANAGER CLINICAL LABEL
+ * - calm medical typography
+ * - subtle color
+ * - spacing optimized for clinical forms
+ * - supports invalid + disabled states
+ */
 
 function Label({
   className,
@@ -13,8 +20,11 @@ function Label({
     <LabelPrimitive.Root
       data-slot="label"
       className={cn(
-        'flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
-        className,
+        "text-sm font-medium text-foreground/80",
+        "mb-1.5 block select-none",
+        "peer-disabled:opacity-50 peer-disabled:cursor-not-allowed",
+        "group-data-[invalid=true]:text-destructive/80",
+        className
       )}
       {...props}
     />

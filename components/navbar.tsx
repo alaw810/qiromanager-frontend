@@ -3,9 +3,13 @@
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { LogOut, LayoutDashboard, Users, Menu, X, User, UserCircle } from "lucide-react"
+import { LogOut, LayoutDashboard, Users, Menu, X, User } from "lucide-react"
 import { useState } from "react"
 
+/**
+ * Clinical UI Navigation Bar
+ * Clean, modern, soft blue, calm healthcare aesthetic
+ */
 export function NavBar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -13,130 +17,76 @@ export function NavBar() {
   if (!isAuthenticated) return null
 
   return (
-    <nav className="border-b border-border bg-card">
+    <nav className="border-b border-border bg-primary/5 backdrop-blur-sm shadow-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
+
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/dashboard" className="text-xl font-bold text-primary">
+            <Link href="/dashboard" className="text-xl font-semibold text-primary tracking-tight">
               Qiromanager
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex md:items-center md:gap-4">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </Link>
+          {/* Desktop Menu */}
+          <div className="hidden md:flex md:items-center md:gap-6">
+            <NavLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+            <NavLink href="/patients" icon={User} label="Patients" />
+            {isAdmin && <NavLink href="/users" icon={Users} label="Users" />}
 
-            <Link
-              href="/patients"
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
-            >
-              <User className="h-4 w-4" />
-              Patients
-            </Link>
-
-            {isAdmin && (
-              <Link
-                href="/users"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
-              >
-                <Users className="h-4 w-4" />
-                Users
-              </Link>
-            )}
-
-            {/* NEW: Profile button */}
-            <Link
-              href="/profile"
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
-            >
-              <UserCircle className="h-4 w-4" />
-              Profile
-            </Link>
-
-            {/* Divider + user info */}
+            {/* Profile + Logout */}
             <div className="ml-4 flex items-center gap-3 border-l border-border pl-4">
-              <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <span className="text-sm text-muted-foreground">
                 {user?.username}
-                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
-                  {user?.role}
-                </span>
               </span>
-              <Button variant="ghost" size="sm" onClick={logout}>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-primary"
+                onClick={logout}
+              >
                 <LogOut className="h-4 w-4" />
-                <span className="sr-only">Logout</span>
               </Button>
             </div>
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="border-t border-border py-4 md:hidden">
+          <div className="border-t border-border py-4 md:hidden bg-background/95 backdrop-blur">
             <div className="flex flex-col gap-2">
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Dashboard
-              </Link>
 
-              <Link
-                href="/patients"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <User className="h-4 w-4" />
-                Patients
-              </Link>
-
+              <MobileLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" onClick={() => setMobileMenuOpen(false)} />
+              <MobileLink href="/patients" icon={User} label="Patients" onClick={() => setMobileMenuOpen(false)} />
               {isAdmin && (
-                <Link
-                  href="/users"
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Users className="h-4 w-4" />
-                  Users
-                </Link>
+                <MobileLink href="/users" icon={Users} label="Users" onClick={() => setMobileMenuOpen(false)} />
               )}
 
-              {/* NEW: Profile in mobile */}
-              <Link
-                href="/profile"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <UserCircle className="h-4 w-4" />
-                Profile
-              </Link>
-
-              <div className="mt-2 border-t border-border pt-2">
+              {/* Mobile Footer */}
+              <div className="mt-3 border-t border-border pt-3">
                 <div className="px-3 py-2 text-sm text-muted-foreground">
-                  Logged in as {user?.username} ({user?.role})
+                  Logged in as {user?.username}
                 </div>
+
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start"
+                  className="w-full justify-start text-muted-foreground hover:text-primary"
                   onClick={() => {
-                    setMobileMenuOpen(false)
                     logout()
+                    setMobileMenuOpen(false)
                   }}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -148,5 +98,34 @@ export function NavBar() {
         )}
       </div>
     </nav>
+  )
+}
+
+/* ------------ REUSABLE COMPONENTS ---------------- */
+
+function NavLink({ href, icon: Icon, label }: any) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium 
+                 text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </Link>
+  )
+}
+
+function MobileLink({ href, icon: Icon, label, onClick }: any) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium 
+                 text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </Link>
   )
 }

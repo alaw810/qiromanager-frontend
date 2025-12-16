@@ -58,7 +58,6 @@ function PatientDetailsContent() {
 
   const handleToggleStatus = async () => {
     if (!patient) return
-
     try {
       setStatusLoading(true)
       await patientsApi.updateStatus(patient.id, !patient.active)
@@ -72,7 +71,6 @@ function PatientDetailsContent() {
 
   const handleAssignToMe = async () => {
     if (!patient) return
-
     try {
       setAssignLoading(true)
       await patientsApi.assignToMe(patient.id)
@@ -89,15 +87,13 @@ function PatientDetailsContent() {
     if (!patient) return
 
     const confirmed = window.confirm(
-      "Are you sure you want to remove this patient from your list?",
+      "Are you sure you want to remove this patient from your list?"
     )
     if (!confirmed) return
 
     try {
       setUnassignLoading(true)
       await patientsApi.unassignFromMe(patient.id)
-
-      // Redirect – toast will be shown on the inbox page.
       router.push("/patients?removed=1")
     } catch (err) {
       toast({
@@ -111,7 +107,7 @@ function PatientDetailsContent() {
   }
 
   const isAlreadyAssigned = patient?.therapists?.some(
-    (therapist) => therapist.id === user?.id,
+    (therapist) => therapist.id === user?.id
   )
 
   if (loading) {
@@ -137,14 +133,26 @@ function PatientDetailsContent() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{patient.fullName}</h1>
-          <p className="mt-2 text-muted-foreground">Patient Details</p>
+
+      {/* ⭐ CLINICAL PREMIUM HEADER */}
+      <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between bg-background/40 backdrop-blur-sm p-6 rounded-2xl border border-border/60 shadow-sm">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            {patient.fullName}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Patient Profile · ID #{patient.id}
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+
+        <div className="flex flex-wrap gap-3">
           {!isAlreadyAssigned && (
-            <Button variant="outline" onClick={handleAssignToMe} disabled={assignLoading}>
+            <Button
+              variant="secondary"
+              onClick={handleAssignToMe}
+              disabled={assignLoading}
+              className="px-4"
+            >
               {assignLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -153,8 +161,9 @@ function PatientDetailsContent() {
               Assign to Me
             </Button>
           )}
+
           <Link href={`/patients/${patient.id}/edit`}>
-            <Button variant="outline">
+            <Button variant="outline" className="px-4">
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Button>
@@ -165,13 +174,14 @@ function PatientDetailsContent() {
               variant="destructive"
               disabled={unassignLoading}
               onClick={handleUnassignFromMe}
+              className="px-4"
             >
               {unassignLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <UserX className="mr-2 h-4 w-4" />
               )}
-              Remove from your patients
+              Remove Patient
             </Button>
           )}
 
@@ -180,6 +190,7 @@ function PatientDetailsContent() {
               variant={patient.active ? "destructive" : "default"}
               onClick={handleToggleStatus}
               disabled={statusLoading}
+              className="px-4"
             >
               {statusLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -194,13 +205,17 @@ function PatientDetailsContent() {
         </div>
       </div>
 
+      {/* 🔥 ERROR ALERT */}
       {error && (
         <Alert variant="destructive" className="mb-6">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
+      {/* ⭐ PAGE CONTENT */}
       <div className="space-y-6">
+
+        {/* BASIC INFO */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -253,6 +268,7 @@ function PatientDetailsContent() {
           </CardContent>
         </Card>
 
+        {/* ASSIGNED THERAPISTS */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -276,20 +292,21 @@ function PatientDetailsContent() {
           </CardContent>
         </Card>
 
-
+        {/* GENERAL NOTES */}
         {patient.generalNotes && (
           <Card>
             <CardHeader>
               <CardTitle>General Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap text-muted-foreground">
+              <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
                 {patient.generalNotes}
               </p>
             </CardContent>
           </Card>
         )}
 
+        {/* SYSTEM INFO */}
         <Card>
           <CardHeader>
             <CardTitle>System Information</CardTitle>
@@ -299,6 +316,7 @@ function PatientDetailsContent() {
             <p>Last Updated: {new Date(patient.updatedAt).toLocaleString()}</p>
           </CardContent>
         </Card>
+
       </div>
     </div>
   )
