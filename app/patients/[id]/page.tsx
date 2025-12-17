@@ -1,12 +1,22 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PrivateRoute } from "@/components/auth/private-route"
 import { useAuth } from "@/contexts/auth-context"
 import { patientsApi, type Patient } from "@/lib/api/patients-api"
@@ -23,7 +33,9 @@ import {
   Calendar,
   Users,
   UserPlus,
+  ArrowLeft
 } from "lucide-react"
+import { PatientDetailSkeleton } from "@/components/patients/patient-detail-skeleton"
 
 function PatientDetailsContent() {
   const router = useRouter()
@@ -35,16 +47,17 @@ function PatientDetailsContent() {
   const [loading, setLoading] = useState(true)
   const [statusLoading, setStatusLoading] = useState(false)
   const [assignLoading, setAssignLoading] = useState(false)
+  
+  // Estado para el diálogo de confirmación
+  const [isUnassignDialogOpen, setIsUnassignDialogOpen] = useState(false)
   const [unassignLoading, setUnassignLoading] = useState(false)
+  
   const [error, setError] = useState<string | null>(null)
 
+  // Aseguramos que id es número
   const patientId = Number(params.id)
 
-  useEffect(() => {
-    loadPatient()
-  }, [patientId])
-
-  const loadPatient = async () => {
+  const loadPatient = useCallback(async () => {
     try {
       setLoading(true)
       const data = await patientsApi.getById(patientId)
@@ -54,16 +67,28 @@ function PatientDetailsContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [patientId])
+
+  useEffect(() => {
+    if (!isNaN(patientId)) {
+      loadPatient()
+    }
+  }, [loadPatient, patientId])
+
+  // --- ACTIONS ---
 
   const handleToggleStatus = async () => {
     if (!patient) return
     try {
       setStatusLoading(true)
       await patientsApi.updateStatus(patient.id, !patient.active)
-      await loadPatient()
+      // Actualizamos localmente para feedback inmediato
+      setPatient(prev => prev ? { ...prev, active: !prev.active } : null)
+      toast({ title: `Patient ${!patient.active ? 'activated' : 'deactivated'} successfully` })
     } catch (err) {
-      setError(getErrorMessage(err))
+      toast({ title: "Error updating status", description: getErrorMessage(err), variant: "destructive" })
+      // Si falla, recargamos los datos reales por si acaso
+      loadPatient() 
     } finally {
       setStatusLoading(false)
     }
@@ -74,10 +99,10 @@ function PatientDetailsContent() {
     try {
       setAssignLoading(true)
       await patientsApi.assignToMe(patient.id)
-      await loadPatient()
+      await loadPatient() // Recargar para ver el cambio en la lista de terapeutas
       toast({ title: "Patient added to your list" })
     } catch (err) {
-      setError(getErrorMessage(err))
+      toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" })
     } finally {
       setAssignLoading(false)
     }
@@ -85,19 +110,14 @@ function PatientDetailsContent() {
 
   const handleUnassignFromMe = async () => {
     if (!patient) return
-
-    const confirmed = window.confirm(
-      "Are you sure you want to remove this patient from your list?"
-    )
-    if (!confirmed) return
-
     try {
       setUnassignLoading(true)
       await patientsApi.unassignFromMe(patient.id)
+      setIsUnassignDialogOpen(false) // Cerrar diálogo
       router.push("/patients?removed=1")
     } catch (err) {
       toast({
-        title: "Error",
+        title: "Error removing patient",
         description: getErrorMessage(err),
         variant: "destructive",
       })
@@ -106,218 +126,220 @@ function PatientDetailsContent() {
     }
   }
 
+  // Helper para formatear fechas de forma segura
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A"
+    return dateString.split("T")[0] // YYYY-MM-DD simple y seguro
+  }
+
   const isAlreadyAssigned = patient?.therapists?.some(
     (therapist) => therapist.id === user?.id
   )
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <PatientDetailSkeleton />
   }
 
   if (error || !patient) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <Alert variant="destructive">
+      <div className="mx-auto max-w-4xl px-4 py-12 text-center">
+        <Alert variant="destructive" className="max-w-lg mx-auto mb-6">
           <AlertDescription>{error || "Patient not found"}</AlertDescription>
         </Alert>
-        <Button onClick={() => router.back()} className="mt-4" variant="outline">
-          Go Back
-        </Button>
+        <Link href="/patients">
+          <Button variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to List
+          </Button>
+        </Link>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 animate-in fade-in-50 duration-500">
 
-      {/* ⭐ CLINICAL PREMIUM HEADER */}
-      <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between bg-background/40 backdrop-blur-sm p-6 rounded-2xl border border-border/60 shadow-sm">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+      {/* HEADER CARD */}
+      <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between bg-background p-6 rounded-xl border shadow-sm">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             {patient.fullName}
           </h1>
-          <p className="text-muted-foreground text-sm">
-            Patient Profile · ID #{patient.id}
-          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant={patient.active ? "default" : "secondary"}>
+              {patient.active ? "Active" : "Inactive"}
+            </Badge>
+            <span className="text-muted-foreground text-sm">ID #{patient.id}</span>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          {/* Action: Assign / Edit */}
           {!isAlreadyAssigned && (
-            <Button
-              variant="secondary"
-              onClick={handleAssignToMe}
-              disabled={assignLoading}
-              className="px-4"
-            >
-              {assignLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <UserPlus className="mr-2 h-4 w-4" />
-              )}
+            <Button variant="secondary" onClick={handleAssignToMe} disabled={assignLoading}>
+              {assignLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
               Assign to Me
             </Button>
           )}
 
           <Link href={`/patients/${patient.id}/edit`}>
-            <Button variant="outline" className="px-4">
+            <Button variant="outline">
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Button>
           </Link>
 
+          {/* Action: Unassign (Opens Dialog) */}
           {isAlreadyAssigned && (
-            <Button
-              variant="destructive"
-              disabled={unassignLoading}
-              onClick={handleUnassignFromMe}
-              className="px-4"
-            >
-              {unassignLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <UserX className="mr-2 h-4 w-4" />
-              )}
-              Remove Patient
+            <Button variant="destructive" onClick={() => setIsUnassignDialogOpen(true)}>
+              <UserX className="mr-2 h-4 w-4" />
+              Remove
             </Button>
           )}
 
+          {/* Action: Admin Deactivate */}
           {isAdmin && (
             <Button
-              variant={patient.active ? "destructive" : "default"}
+              variant="ghost"
               onClick={handleToggleStatus}
               disabled={statusLoading}
-              className="px-4"
+              className={patient.active ? "text-destructive hover:text-destructive hover:bg-destructive/10" : ""}
             >
               {statusLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : patient.active ? (
-                <UserX className="mr-2 h-4 w-4" />
+                "Deactivate User"
               ) : (
-                <UserCheck className="mr-2 h-4 w-4" />
+                <span className="flex items-center text-green-600"><UserCheck className="mr-2 h-4 w-4" /> Activate</span>
               )}
-              {patient.active ? "Deactivate" : "Activate"}
             </Button>
           )}
         </div>
       </div>
 
-      {/* 🔥 ERROR ALERT */}
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* ⭐ PAGE CONTENT */}
-      <div className="space-y-6">
-
-        {/* BASIC INFO */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Basic Information</CardTitle>
-              <Badge variant={patient.active ? "default" : "secondary"}>
-                {patient.active ? "Active" : "Inactive"}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
-                <p className="text-base">
-                  {new Date(patient.dateOfBirth).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-
-            {patient.phone && (
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Phone</p>
-                  <p className="text-base">{patient.phone}</p>
-                </div>
-              </div>
-            )}
-
-            {patient.email && (
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Email</p>
-                  <p className="text-base">{patient.email}</p>
-                </div>
-              </div>
-            )}
-
-            {patient.address && (
-              <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Address</p>
-                  <p className="text-base">{patient.address}</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* ASSIGNED THERAPISTS */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Assigned Therapists
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {patient.therapists && patient.therapists.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {patient.therapists.map((therapist) => (
-                  <Badge key={therapist.id} variant="secondary" className="px-3 py-1">
-                    {therapist.fullName}
-                    {therapist.id === user?.id && " (You)"}
-                  </Badge>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No therapists assigned yet.</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* GENERAL NOTES */}
-        {patient.generalNotes && (
-          <Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* LEFT COLUMN: Contact Info */}
+        <div className="space-y-6">
+          <Card className="h-full">
             <CardHeader>
-              <CardTitle>General Notes</CardTitle>
+              <CardTitle>Contact Information</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
-                {patient.generalNotes}
-              </p>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Birth Date</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(patient.dateOfBirth)}</p>
+                </div>
+              </div>
+
+              {patient.phone ? (
+                <div className="flex items-start gap-3">
+                  <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Phone</p>
+                    <p className="text-sm text-muted-foreground">{patient.phone}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 opacity-50">
+                  <Phone className="h-5 w-5" /> <span className="text-sm">No phone registered</span>
+                </div>
+              )}
+
+              {patient.email ? (
+                <div className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Email</p>
+                    <p className="text-sm text-muted-foreground">{patient.email}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 opacity-50">
+                  <Mail className="h-5 w-5" /> <span className="text-sm">No email registered</span>
+                </div>
+              )}
+
+              {patient.address && (
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Address</p>
+                    <p className="text-sm text-muted-foreground">{patient.address}</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
-        )}
+        </div>
 
-        {/* SYSTEM INFO */}
-        <Card>
-          <CardHeader>
-            <CardTitle>System Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>Created: {new Date(patient.createdAt).toLocaleString()}</p>
-            <p>Last Updated: {new Date(patient.updatedAt).toLocaleString()}</p>
-          </CardContent>
-        </Card>
+        {/* RIGHT COLUMN: Clinical Data & System */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" /> Assigned Team
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {patient.therapists && patient.therapists.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {patient.therapists.map((therapist) => (
+                    <Badge key={therapist.id} variant="secondary">
+                      {therapist.fullName}
+                      {therapist.id === user?.id && " (You)"}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No therapists assigned yet.</p>
+              )}
+            </CardContent>
+          </Card>
 
+          {patient.generalNotes && (
+            <Card>
+              <CardHeader>
+                <CardTitle>General Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-muted/50 p-3 rounded-md text-sm text-muted-foreground whitespace-pre-wrap">
+                  {patient.generalNotes}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
+
+      {/* ALERT DIALOG: UNASSIGN CONFIRMATION */}
+      <AlertDialog open={isUnassignDialogOpen} onOpenChange={setIsUnassignDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove from your patients?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove <strong>{patient.fullName}</strong> from your list. 
+              You can assign them back later if needed. The patient record will not be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unassignLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault() // Evitamos cierre automático para manejar loading
+                handleUnassignFromMe()
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={unassignLoading}
+            >
+              {unassignLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Remove Patient
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   )
 }

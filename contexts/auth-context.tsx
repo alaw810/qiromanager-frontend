@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { authApi, type LoginRequest, type RegisterRequest, type AuthResponse } from "@/lib/api/auth-api"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 export interface AuthUser {
   id: number
@@ -28,28 +28,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
-  // Load session from localStorage on mount
+  const handleLogout = useCallback(() => {
+    setUser(null)
+    setToken(null)
+    localStorage.removeItem("token")
+    router.push("/login")
+  }, [router])
+
   useEffect(() => {
-    const storedToken = localStorage.getItem("token")
-    const storedUser = localStorage.getItem("user")
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem("token")
+      
+      if (!storedToken) {
+        setIsLoading(false)
+        return
+      }
 
-    if (storedToken && storedUser) {
       try {
-        setToken(storedToken)
-        setUser(JSON.parse(storedUser))
-      } catch {
+        setToken(storedToken) 
+        
+        const userData = await authApi.me()
+        
+        setUser({
+          id: userData.id,
+          username: userData.username,
+          role: userData.role,
+        })
+      } catch (error) {
+        console.error("Session restoration failed:", error)
+        // Si falla (token expirado o inválido), limpiamos todo
         localStorage.removeItem("token")
-        localStorage.removeItem("user")
+        setToken(null)
+        setUser(null)
+      } finally {
+        setIsLoading(false)
       }
     }
-    setIsLoading(false)
+
+    initAuth()
   }, [])
 
   const login = useCallback(async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await authApi.login(data)
 
-    // Store in state
     setToken(response.token)
     setUser({
       id: response.id,
@@ -57,17 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: response.role,
     })
 
-    // Persist to localStorage
     localStorage.setItem("token", response.token)
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        id: response.id,
-        username: response.username,
-        role: response.role,
-      }),
-    )
-
+    
     return response
   }, [])
 
@@ -75,23 +89,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authApi.register(data)
   }, [])
 
-  const logout = useCallback(() => {
-    setUser(null)
-    setToken(null)
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    router.push("/login")
-  }, [router])
-
   const value: AuthContextType = {
     user,
     token,
     isLoading,
-    isAuthenticated: !!user && !!token,
+    isAuthenticated: !!user,
     isAdmin: user?.role === "ADMIN",
     login,
     register,
-    logout,
+    logout: handleLogout,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

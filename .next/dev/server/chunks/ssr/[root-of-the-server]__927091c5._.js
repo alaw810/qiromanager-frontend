@@ -105,49 +105,41 @@ __turbopack_context__.s([
     ()=>getErrorMessage
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/axios/lib/axios.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$index$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/axios/index.js [app-ssr] (ecmascript) <locals>");
 ;
-const API_BASE_URL = ("TURBOPACK compile-time value", "http://localhost:8080") || "http://localhost:8080";
+// Use environment variable strictly. If missing, it helps to fail fast or log a warning in dev.
+const API_BASE_URL = ("TURBOPACK compile-time value", "http://localhost:8080");
+if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
+;
 const axiosClient = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].create({
-    baseURL: API_BASE_URL,
+    baseURL: API_BASE_URL || "http://localhost:8080",
     headers: {
         "Content-Type": "application/json"
     }
 });
-// Request interceptor to attach JWT token
+// Request interceptor to add JWT token
 axiosClient.interceptors.request.use((config)=>{
+    // Check if running in browser to avoid SSR errors with localStorage
     if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
     ;
     return config;
 }, (error)=>Promise.reject(error));
-// Response interceptor for error handling
+// Response interceptor to handle errors globally
 axiosClient.interceptors.response.use((response)=>response, (error)=>{
-    const status = error.response?.status;
-    const url = error.config?.url ?? "";
-    // Detect if this error came from login/register
-    const isAuthRequest = url.includes("/api/v1/auth/login") || url.includes("/api/v1/auth/register");
-    if (status === 401 && !isAuthRequest) {
-        // Token expired or invalid – ONLY redirect if it's not a login attempt
-        if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
-        ;
-    } else if (status === 403) {
-        // Access denied – redirect only if not an auth route
+    if (error.response && error.response.status === 401) {
         if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
         ;
     }
     return Promise.reject(error);
 });
 function getErrorMessage(error) {
-    if (__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].isAxiosError(error)) {
-        const apiError = error.response?.data;
-        if (apiError?.message) {
-            return apiError.message;
-        }
-        return error.message || "An unexpected error occurred";
+    if ((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$index$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["isAxiosError"])(error)) {
+        return error.response?.data?.message || error.message || "An unexpected error occurred";
     }
     if (error instanceof Error) {
         return error.message;
     }
-    return "An unexpected error occurred";
+    return "An unknown error occurred";
 }
 }),
 "[project]/lib/api/auth-api.ts [app-ssr] (ecmascript)", ((__turbopack_context__) => {
@@ -166,6 +158,10 @@ const authApi = {
     },
     register: async (data)=>{
         await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["axiosClient"].post("/api/v1/auth/register", data);
+    },
+    me: async ()=>{
+        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["axiosClient"].get("/api/v1/users/me");
+        return response.data;
     }
 };
 }),
@@ -193,67 +189,72 @@ function AuthProvider({ children }) {
     const [token, setToken] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(true);
     const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRouter"])();
-    // Load session from localStorage on mount
+    const pathname = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["usePathname"])();
+    const handleLogout = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem("token");
+        router.push("/login");
+    }, [
+        router
+    ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        const storedToken = localStorage.getItem("token");
-        const storedUser = localStorage.getItem("user");
-        if (storedToken && storedUser) {
+        const initAuth = async ()=>{
+            const storedToken = localStorage.getItem("token");
+            if (!storedToken) {
+                setIsLoading(false);
+                return;
+            }
             try {
                 setToken(storedToken);
-                setUser(JSON.parse(storedUser));
-            } catch  {
+                const userData = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$auth$2d$api$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["authApi"].me();
+                setUser({
+                    id: userData.id,
+                    username: userData.username,
+                    role: userData.role
+                });
+            } catch (error) {
+                console.error("Session restoration failed:", error);
+                // Si falla (token expirado o inválido), limpiamos todo
                 localStorage.removeItem("token");
-                localStorage.removeItem("user");
+                setToken(null);
+                setUser(null);
+            } finally{
+                setIsLoading(false);
             }
-        }
-        setIsLoading(false);
+        };
+        initAuth();
     }, []);
     const login = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (data)=>{
         const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$auth$2d$api$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["authApi"].login(data);
-        // Store in state
         setToken(response.token);
         setUser({
             id: response.id,
             username: response.username,
             role: response.role
         });
-        // Persist to localStorage
         localStorage.setItem("token", response.token);
-        localStorage.setItem("user", JSON.stringify({
-            id: response.id,
-            username: response.username,
-            role: response.role
-        }));
         return response;
     }, []);
     const register = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (data)=>{
         await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$auth$2d$api$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["authApi"].register(data);
     }, []);
-    const logout = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        router.push("/login");
-    }, [
-        router
-    ]);
     const value = {
         user,
         token,
         isLoading,
-        isAuthenticated: !!user && !!token,
+        isAuthenticated: !!user,
         isAdmin: user?.role === "ADMIN",
         login,
         register,
-        logout
+        logout: handleLogout
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AuthContext.Provider, {
         value: value,
         children: children
     }, void 0, false, {
         fileName: "[project]/contexts/auth-context.tsx",
-        lineNumber: 97,
+        lineNumber: 103,
         columnNumber: 10
     }, this);
 }

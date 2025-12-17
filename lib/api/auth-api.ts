@@ -28,4 +28,9 @@ export const authApi = {
   register: async (data: RegisterRequest): Promise<void> => {
     await axiosClient.post("/api/v1/auth/register", data)
   },
+
+  me: async (): Promise<Omit<AuthResponse, "token">> => {
+    const response = await axiosClient.get("/api/v1/users/me")
+    return response.data
+  },
 }

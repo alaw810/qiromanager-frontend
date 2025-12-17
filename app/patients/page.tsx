@@ -1,21 +1,21 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
+import { useSearchParams, useRouter } from "next/navigation" // Importamos hooks de navegación modernos
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { PrivateRoute } from "@/components/auth/private-route"
 import { patientsApi, type Patient } from "@/lib/api/patients-api"
 import { getErrorMessage } from "@/lib/api/axios-client"
-import { Plus, Loader2, Search, X } from "lucide-react"
+import { Plus, Search, X, RefreshCw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 import { ViewToggle } from "@/components/patients/view-toggle"
 import { PatientListView } from "@/components/patients/patient-list-view"
 import { PatientGridView } from "@/components/patients/patient-grid-view"
+import { PatientGridSkeleton, PatientListSkeleton } from "@/components/patients/patients-loading-skeletons"
 
 export default function PatientsPage() {
   return (
@@ -29,16 +29,14 @@ function PatientsPageContent() {
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
   const [view, setView] = useState<"grid" | "list">("grid")
-  const [sortBy, setSortBy] = useState<"name" | "createdAt">("name")
-
   const [searchQuery, setSearchQuery] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
-
+  
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
-  // Load saved view
+  // 1. Cargar preferencia de vista
   useEffect(() => {
     const saved = localStorage.getItem("patients_view")
     if (saved === "grid" || saved === "list") {
@@ -46,103 +44,79 @@ function PatientsPageContent() {
     }
   }, [])
 
-  // Save chosen view
   const changeView = (newView: "grid" | "list") => {
     setView(newView)
     localStorage.setItem("patients_view", newView)
   }
 
-  // Toast for removed patients (SSR-proof)
+  // 2. Manejo de Toasts (ej. al borrar paciente)
   useEffect(() => {
-    if (typeof window === "undefined") return
-    const url = new URL(window.location.href)
-    const removed = url.searchParams.get("removed")
-
-    if (removed === "1") {
-      setTimeout(() => {
-        toast({ title: "Patient removed from your list" })
-      }, 30)
-
-      url.searchParams.delete("removed")
-      window.history.replaceState({}, "", url.toString())
+    if (searchParams.get("removed") === "1") {
+      // Pequeño delay para asegurar que el toast manager esté listo
+      setTimeout(() => toast({ title: "Patient deleted successfully" }), 0)
+      
+      // Limpiamos la URL sin recargar
+      const newParams = new URLSearchParams(searchParams.toString())
+      newParams.delete("removed")
+      router.replace(`/patients?${newParams.toString()}`)
     }
-  }, [toast])
+  }, [searchParams, toast, router])
 
-  const loadPatients = useCallback(async () => {
+  // 3. Carga de Pacientes (Centralizada)
+  const fetchPatients = useCallback(async (query: string = "") => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true)
-      setError(null)
-      const data = await patientsApi.getAll()
+      let data: Patient[]
+      
+      if (query.trim()) {
+        data = await patientsApi.search(query.trim())
+      } else {
+        data = await patientsApi.getAll()
+      }
 
-      // Only active patients
+      // Por defecto mostramos solo activos si es la lista general
+      // (Podrías añadir un toggle "Show Inactive" en el futuro)
       const activePatients = data.filter((p) => p.active)
-
       setPatients(activePatients)
     } catch (err) {
+      console.error(err)
       setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
   }, [])
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      loadPatients()
-      return
-    }
+  // Cargar al inicio
+  useEffect(() => {
+    fetchPatients()
+  }, [fetchPatients])
 
-    try {
-      setIsSearching(true)
-      setError(null)
-      const data = await patientsApi.search(searchQuery.trim())
-
-      const filtered = data.filter((p) => p.active)
-      setPatients(filtered)
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setIsSearching(false)
-    }
+  // Manejador de búsqueda
+  const handleSearch = () => {
+    fetchPatients(searchQuery)
   }
 
   const clearSearch = () => {
     setSearchQuery("")
-    loadPatients()
+    fetchPatients("")
   }
-
-  useEffect(() => {
-    loadPatients()
-  }, [loadPatients])
 
   const handlePatientUpdated = (updated: Patient) => {
-    setPatients((prev) =>
-      prev.map((p) => (p.id === updated.id ? updated : p)),
-    )
+    setPatients((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
   }
 
-  // Sorting logic
-  const sortedPatients = [...patients].sort((a, b) => {
-    if (sortBy === "name") {
-      return a.fullName.localeCompare(b.fullName)
-    }
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  })
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-
-      {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Patients</h1>
-          <p className="mt-2 text-muted-foreground">
-            Manage your patients
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Patients</h1>
+          <p className="text-muted-foreground mt-1">Manage your clinic's patient records.</p>
         </div>
-
         <div className="flex items-center gap-2">
           <ViewToggle view={view} onChange={changeView} />
-
           <Link href="/patients/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -152,75 +126,68 @@ function PatientsPageContent() {
         </div>
       </div>
 
-      {/* Search + Sort */}
-      <div className="mb-6 flex gap-2 items-center">
+      {/* Filters & Search */}
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search patients by name..."
+            placeholder="Search by name, email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="pl-10 pr-10"
+            className="pl-9 pr-9"
           />
           {searchQuery && (
             <button
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3" />
             </button>
           )}
         </div>
-
-        <Button
-          variant={sortBy === "name" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSortBy("name")}
-        >
-          Sort Name
-        </Button>
-
-        <Button
-          variant={sortBy === "createdAt" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSortBy("createdAt")}
-        >
-          Sort Created
-        </Button>
-
-        <Button onClick={handleSearch} disabled={isSearching}>
-          {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+        <Button variant="secondary" onClick={handleSearch} disabled={loading}>
+          {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Search"}
         </Button>
       </div>
 
-      {/* Error */}
+      {/* Error State */}
       {error && (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Loading */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : sortedPatients.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card p-12 text-center">
-          <h3 className="text-lg font-semibold text-foreground">No patients found</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Try a different search term or clear filters.
-          </p>
-        </div>
-      ) : view === "grid" ? (
-        <PatientGridView
-          patients={sortedPatients}
-          onPatientUpdated={handlePatientUpdated}
-        />
-      ) : (
-        <PatientListView patients={sortedPatients} />
-      )}
+      {/* Main Content Area */}
+      <div className="min-h-75">
+        {loading ? (
+          // MOSTRAMOS SKELETONS SEGÚN LA VISTA
+          view === "grid" ? <PatientGridSkeleton /> : <PatientListSkeleton />
+        ) : patients.length === 0 ? (
+          // ESTADO VACÍO
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center animate-in fade-in-50">
+            <div className="rounded-full bg-muted p-3 mb-4">
+              <Search className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold">No patients found</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
+              We couldn't find any active patients matching your search criteria.
+            </p>
+            {searchQuery && (
+              <Button variant="outline" onClick={clearSearch}>
+                Clear Search
+              </Button>
+            )}
+          </div>
+        ) : (
+          // LISTA REAL
+          view === "grid" ? (
+            <PatientGridView patients={patients} onPatientUpdated={handlePatientUpdated} />
+          ) : (
+            <PatientListView patients={patients} />
+          )
+        )}
+      </div>
     </div>
   )
 }

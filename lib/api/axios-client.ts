@@ -1,20 +1,26 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
+import axios, { isAxiosError } from "axios"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+// Use environment variable strictly. If missing, it helps to fail fast or log a warning in dev.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+
+if (!API_BASE_URL) {
+  console.warn("WARNING: NEXT_PUBLIC_API_URL is not defined. API calls may fail.")
+}
 
 export const axiosClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL || "http://localhost:8080", // Keep localhost fallback strictly for local dev convenience
   headers: {
     "Content-Type": "application/json",
   },
 })
 
-// Request interceptor to attach JWT token
+// Request interceptor to add JWT token
 axiosClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  (config) => {
+    // Check if running in browser to avoid SSR errors with localStorage
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("token")
-      if (token && config.headers) {
+      if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
     }
@@ -23,55 +29,32 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
-// Response interceptor for error handling
+// Response interceptor to handle errors globally
 axiosClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
-    const status = error.response?.status;
-    const url = error.config?.url ?? "";
-
-    // Detect if this error came from login/register
-    const isAuthRequest =
-      url.includes("/api/v1/auth/login") ||
-      url.includes("/api/v1/auth/register");
-
-    if (status === 401 && !isAuthRequest) {
-      // Token expired or invalid – ONLY redirect if it's not a login attempt
+  (error) => {
+    if (error.response && error.response.status === 401) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
-      }
-    } else if (status === 403) {
-      // Access denied – redirect only if not an auth route
-      if (!isAuthRequest && typeof window !== "undefined") {
-        window.location.href = "/access-denied";
+        localStorage.removeItem("token")
+        localStorage.removeItem("user")
+        
+        // Only redirect if we are not already on the login page to avoid loops
+        if (!window.location.pathname.includes("/login")) {
+           window.location.href = "/login"
+        }
       }
     }
-
-    return Promise.reject(error);
+    return Promise.reject(error)
   },
-);
+)
 
-
-export interface ApiError {
-  timestamp: string
-  status: number
-  error: string
-  message: string
-  path: string
-}
-
+// Helper to extract error messages safely
 export function getErrorMessage(error: unknown): string {
-  if (axios.isAxiosError(error)) {
-    const apiError = error.response?.data as ApiError
-    if (apiError?.message) {
-      return apiError.message
-    }
-    return error.message || "An unexpected error occurred"
+  if (isAxiosError(error)) {
+    return error.response?.data?.message || error.message || "An unexpected error occurred"
   }
   if (error instanceof Error) {
     return error.message
   }
-  return "An unexpected error occurred"
+  return "An unknown error occurred"
 }

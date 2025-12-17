@@ -88,7 +88,7 @@ function SelectContent({
           className={cn(
             "p-1",
             position === "popper" &&
-              "h-[var(--radix-select-trigger-height)] min-w-[var(--radix-select-trigger-width)] w-full"
+              "h-(--radix-select-trigger-height) min-w-(--radix-select-trigger-width) w-full"
           )}
         >
           {children}
@@ -129,7 +129,7 @@ function SelectItem({
         "outline-none select-none",
         "hover:bg-primary/10 hover:text-primary",
         "data-[state=checked]:bg-primary/15",
-        "data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed",
+        "data-disabled:opacity-50 data-disabled:cursor-not-allowed",
         className
       )}
       {...props}
