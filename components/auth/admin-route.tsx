@@ -1,41 +1,44 @@
 "use client"
 
-import type React from "react"
-
-import { useAuth } from "@/contexts/auth-context"
-import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
 import { Loader2 } from "lucide-react"
+import { NavBar } from "@/components/navbar" // Asegúrate de importar la Navbar
 
-interface AdminRouteProps {
-  children: React.ReactNode
-}
-
-export function AdminRoute({ children }: AdminRouteProps) {
-  const { isAuthenticated, isAdmin, isLoading } = useAuth()
+export function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading, isAdmin } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (!isLoading) {
-      if (!isAuthenticated) {
+      if (!user) {
         router.push("/login")
       } else if (!isAdmin) {
-        router.push("/access-denied")
+        router.push("/dashboard") // Si no es admin, fuera
       }
     }
-  }, [isAuthenticated, isAdmin, isLoading, router])
+  }, [user, isLoading, isAdmin, router])
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
-  if (!isAuthenticated || !isAdmin) {
+  if (!isAdmin) {
     return null
   }
 
-  return <>{children}</>
+  // AHORA: Renderizamos la Navbar aquí también para mantener la consistencia
+  return (
+    <div className="min-h-screen bg-background">
+      <NavBar />
+      <main className="container mx-auto py-6">
+        {children}
+      </main>
+    </div>
+  )
 }

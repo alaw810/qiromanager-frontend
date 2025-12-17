@@ -1,37 +1,40 @@
 "use client"
 
-import type React from "react"
-
-import { useAuth } from "@/contexts/auth-context"
-import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
 import { Loader2 } from "lucide-react"
+import { NavBar } from "@/components/navbar" // <--- Importamos la Navbar aquí
 
-interface PrivateRouteProps {
-  children: React.ReactNode
-}
-
-export function PrivateRoute({ children }: PrivateRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth()
+export function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !user) {
       router.push("/login")
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [user, isLoading, router])
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return null
   }
 
-  return <>{children}</>
+  // Renderizamos la estructura de la app autenticada: Navbar + Contenido
+  return (
+    <div className="min-h-screen bg-background">
+      <NavBar />
+      <main className="container mx-auto py-6">
+        {children}
+      </main>
+    </div>
+  )
 }
