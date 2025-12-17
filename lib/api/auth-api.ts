@@ -15,6 +15,7 @@ export interface RegisterRequest {
 export interface AuthResponse {
   id: number
   username: string
+  fullName: string
   role: "ADMIN" | "USER"
   token: string
 }

@@ -112,7 +112,6 @@ function AuthProvider({ children }) {
     const [token, setToken] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(true);
     const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"])();
-    const pathname = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["usePathname"])();
     const handleLogout = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "AuthProvider.useCallback[handleLogout]": ()=>{
             setUser(null);
@@ -135,14 +134,15 @@ function AuthProvider({ children }) {
                     try {
                         setToken(storedToken);
                         const userData = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$auth$2d$api$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["authApi"].me();
+                        // Guardamos todos los datos, incluido el fullName
                         setUser({
                             id: userData.id,
                             username: userData.username,
+                            fullName: userData.fullName || userData.username,
                             role: userData.role
                         });
                     } catch (error) {
                         console.error("Session restoration failed:", error);
-                        // Si falla (token expirado o inválido), limpiamos todo
                         localStorage.removeItem("token");
                         setToken(null);
                         setUser(null);
@@ -161,6 +161,7 @@ function AuthProvider({ children }) {
             setUser({
                 id: response.id,
                 username: response.username,
+                fullName: response.fullName || response.username,
                 role: response.role
             });
             localStorage.setItem("token", response.token);
@@ -187,14 +188,13 @@ function AuthProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/contexts/auth-context.tsx",
-        lineNumber: 103,
+        lineNumber: 104,
         columnNumber: 10
     }, this);
 }
-_s(AuthProvider, "LBMQvUBhs/zVib9zXPWrimLWL9A=", false, function() {
+_s(AuthProvider, "aXRncwoaBjuNexlUi+x0KLDwECY=", false, function() {
     return [
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["usePathname"]
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"]
     ];
 });
 _c = AuthProvider;

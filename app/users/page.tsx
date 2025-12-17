@@ -1,25 +1,39 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
-import { AdminRoute } from "@/components/auth/admin-route"
+import { AdminRoute } from "@/components/auth/admin-route" // Asegúrate de que este componente existe
 import { usersApi, type User } from "@/lib/api/users-api"
 import { getErrorMessage } from "@/lib/api/axios-client"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, AlertCircle, Users, RefreshCw, Edit, UserX, UserCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Edit, UserCog, Shield, ShieldAlert, CheckCircle2, XCircle } from "lucide-react"
+import { UsersListSkeleton } from "@/components/users/users-loading-skeleton"
 
-function UsersContent() {
+export default function UsersPage() {
+  return (
+    <AdminRoute>
+      <UsersPageContent />
+    </AdminRoute>
+  )
+}
+
+function UsersPageContent() {
   const [users, setUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [statusLoadingId, setStatusLoadingId] = useState<number | null>(null)
 
-  const fetchUsers = async () => {
-    setIsLoading(true)
+  const fetchUsers = useCallback(async () => {
+    setLoading(true)
     setError(null)
     try {
       const data = await usersApi.getAll()
@@ -27,147 +41,113 @@ function UsersContent() {
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [fetchUsers])
 
-  const handleToggleStatus = async (userId: number, currentActive: boolean) => {
-    try {
-      setStatusLoadingId(userId)
-      await usersApi.updateStatus(userId, !currentActive)
-      await fetchUsers()
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setStatusLoadingId(null)
-    }
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">System Users</h1>
+        </div>
+        <UsersListSkeleton />
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Users Management</h1>
-            <p className="mt-2 text-muted-foreground">
-              View and manage all registered users in the system.
-            </p>
-          </div>
-          <Button onClick={fetchUsers} variant="outline" disabled={isLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in-50">
+      
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">System Users</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage therapist access and roles.
+          </p>
         </div>
+        {/* Aquí podrías poner un botón de "Invite User" si tuvieras esa función */}
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              All Users
-            </CardTitle>
-            <CardDescription>
-              {users.length} user{users.length !== 1 ? "s" : ""} registered
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : users.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">No users found.</div>
+      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-75">User Details</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                  No users found in the system.
+                </TableCell>
+              </TableRow>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-20">ID</TableHead>
-                      <TableHead>Full Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Username</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
+              users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                        {user.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{user.fullName || user.username}</span>
+                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    {user.role === "ADMIN" ? (
+                      <Badge variant="default" className="bg-purple-600 hover:bg-purple-700">
+                        <ShieldAlert className="w-3 h-3 mr-1" /> Admin
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">
+                        <Shield className="w-3 h-3 mr-1" /> User
+                      </Badge>
+                    )}
+                  </TableCell>
 
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.id}</TableCell>
-                        <TableCell>{user.fullName}</TableCell>
-                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                        <TableCell>{user.username}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
-                            {user.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={user.active ? "default" : "destructive"}
-                            className={
-                              user.active
-                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                : ""
-                            }
-                          >
-                            {user.active ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
+                  <TableCell>
+                    {user.active ? (
+                      <div className="flex items-center text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full w-fit">
+                        <CheckCircle2 className="w-3 h-3 mr-1" /> Active
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-xs font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-full w-fit">
+                        <XCircle className="w-3 h-3 mr-1" /> Inactive
+                      </div>
+                    )}
+                  </TableCell>
 
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Link href={`/users/${user.id}/edit`}>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </Link>
-
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleToggleStatus(user.id, user.active)}
-                              disabled={statusLoadingId === user.id}
-                            >
-                              {statusLoadingId === user.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : user.active ? (
-                                <UserX className="h-4 w-4 text-destructive" />
-                              ) : (
-                                <UserCheck className="h-4 w-4 text-green-600" />
-                              )}
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  <TableCell className="text-right">
+                    <Link href={`/users/${user.id}/edit`}>
+                      <Button variant="ghost" size="icon" title="Edit Permissions">
+                        <Edit className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                      </Button>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
-          </CardContent>
-        </Card>
-      </main>
+          </TableBody>
+        </Table>
+      </div>
     </div>
-  )
-}
-
-export default function UsersPage() {
-  return (
-    <AdminRoute>
-      <UsersContent />
-    </AdminRoute>
   )
 }

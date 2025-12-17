@@ -7,6 +7,7 @@ import { useRouter, usePathname } from "next/navigation"
 export interface AuthUser {
   id: number
   username: string
+  fullName: string // <--- AÑADIDO
   role: "ADMIN" | "USER"
 }
 
@@ -28,7 +29,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
-  const pathname = usePathname()
 
   const handleLogout = useCallback(() => {
     setUser(null)
@@ -48,17 +48,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         setToken(storedToken) 
-        
         const userData = await authApi.me()
         
+        // Guardamos todos los datos, incluido el fullName
         setUser({
           id: userData.id,
           username: userData.username,
+          fullName: userData.fullName || userData.username, // Fallback por seguridad
           role: userData.role,
         })
       } catch (error) {
         console.error("Session restoration failed:", error)
-        // Si falla (token expirado o inválido), limpiamos todo
         localStorage.removeItem("token")
         setToken(null)
         setUser(null)
@@ -77,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser({
       id: response.id,
       username: response.username,
+      fullName: response.fullName || response.username, // <--- AÑADIDO
       role: response.role,
     })
 
