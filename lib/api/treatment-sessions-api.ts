@@ -20,15 +20,15 @@ export const treatmentSessionsApi = {
   
   create: async (params: CreateSessionParams) => {
     // Backend espera: { sessionDate: "...", notes: "..." }
-    // Concatenamos info extra en las notas si el backend no tiene campos específicos
+    // CAMBIO: Usamos formato con corchetes e Inglés para que el frontend lo detecte bien
     const combinedNotes = `
-      Diagnóstico: ${params.diagnosis || 'N/A'}
-      Procedimiento: ${params.procedureApplied || 'N/A'}
-      Notas: ${params.notes}
+[Diagnosis]: ${params.diagnosis || 'N/A'}
+[Procedure]: ${params.procedureApplied || 'N/A'}
+[Notes]: ${params.notes}
     `.trim();
 
     const payload = {
-      sessionDate: params.date, // Asegúrate de que sea formato ISO (YYYY-MM-DDTHH:mm:ss)
+      sessionDate: params.date, // Asegúrate de que sea formato ISO
       notes: combinedNotes
     };
 

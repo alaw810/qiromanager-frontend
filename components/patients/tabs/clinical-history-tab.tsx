@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-// Cambiamos 'es' a 'enUS' para fechas en inglés (o quita el locale para default)
 import { enUS } from "date-fns/locale"; 
 import { 
   FileText, 
@@ -13,7 +12,11 @@ import {
   Loader2, 
   Paperclip, 
   Download, 
-  Stethoscope 
+  Stethoscope,
+  Calendar,
+  Filter, // Nuevo
+  Search, // Nuevo
+  XCircle // Nuevo
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -42,31 +45,36 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast"; 
+import { cn } from "@/lib/utils";
 
 import { clinicalRecordsApi } from "@/lib/api/clinical-records-api";
 import { ClinicalRecord } from "@/types";
 
 // --- Constants & Helpers ---
 
-// Claves (Keys) = JAVA ENUMS (¡Intocables!)
-// Valores (Values) = Texto visible en el Select (Ahora en Inglés)
 const RECORD_TYPES = {
-  ANAMNESIS: "Initial Assessment / Anamnesis",
-  EVOLUTION: "Progress Note / Evolution",
+  ANAMNESIS: "Initial Assessment",
+  EVOLUTION: "Progress Note",
   MEDICAL_REPORT: "Medical Report",
   CONSENT: "Informed Consent",
-  RECOMMENDATION: "Recommendation / Advice"
+  RECOMMENDATION: "Recommendation"
 };
 
-const getBadgeColor = (type: string) => {
+const getTypeStyles = (type: string) => {
   switch (type) {
-    case "ANAMNESIS": return "default"; // Black/Primary
-    case "MEDICAL_REPORT": return "destructive"; // Red
-    case "EVOLUTION": return "secondary"; // Gray
-    default: return "outline"; 
+    case "ANAMNESIS": 
+      return { border: "border-l-blue-500", badge: "bg-blue-100 text-blue-700 hover:bg-blue-100" };
+    case "MEDICAL_REPORT": 
+      return { border: "border-l-red-500", badge: "bg-red-100 text-red-700 hover:bg-red-100" };
+    case "EVOLUTION": 
+      return { border: "border-l-emerald-500", badge: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" };
+    case "CONSENT":
+      return { border: "border-l-purple-500", badge: "bg-purple-100 text-purple-700 hover:bg-purple-100" };
+    default: 
+      return { border: "border-l-gray-400", badge: "bg-gray-100 text-gray-700 hover:bg-gray-100" };
   }
 };
 
@@ -92,12 +100,15 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
+  // --- Estados de Filtrado ---
+  const [filterType, setFilterType] = useState<string>("ALL");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      // CORRECCIÓN CRÍTICA: "SESSION_NOTE" no existe en tu backend. Usamos uno válido.
       recordType: "EVOLUTION", 
       content: "",
     },
@@ -140,10 +151,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
       });
 
       setIsDialogOpen(false);
-      form.reset({
-        recordType: "EVOLUTION",
-        content: ""
-      });
+      form.reset({ recordType: "EVOLUTION", content: "" });
       setSelectedFile(null);
       loadRecords();
     } catch (error) {
@@ -156,42 +164,78 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
     }
   };
 
-  // Helper para mostrar texto legible del tipo de registro en la tarjeta
   const getRecordLabel = (type: string) => {
-    // Intenta buscar en nuestro mapa, si no existe devuelve el tipo crudo formateado
     return RECORD_TYPES[type as keyof typeof RECORD_TYPES] || type.replace(/_/g, " ");
   };
+
+  const renderFormattedContent = (content: string) => {
+    if (!content) return null;
+
+    const lines = content.split('\n');
+
+    return (
+      <div className="space-y-2 text-sm text-gray-700">
+        {lines.map((line, index) => {
+          if (line.includes("Treatment Session performed")) {
+             return <p key={index} className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{line}</p>
+          }
+
+          const match = line.match(/^([A-Za-zÁ-Úá-ú\s]+):(.+)/);
+          
+          if (match) {
+            return (
+              <div key={index} className="flex flex-col sm:flex-row sm:gap-2">
+                {/* Corregido min-w-30 a min-w-[120px] */}
+                <span className="font-semibold text-gray-900 min-w-30">{match[1]}:</span>
+                <span>{match[2]}</span>
+              </div>
+            );
+          }
+
+          if (line.trim() === "") return <br key={index} />;
+          return <p key={index} className="leading-relaxed">{line}</p>;
+        })}
+      </div>
+    );
+  };
+
+  // --- LÓGICA DE FILTRADO ---
+  const filteredRecords = records.filter((record) => {
+    const matchesType = filterType === "ALL" || record.recordType === filterType;
+    const searchLower = searchTerm.toLowerCase();
+    const matchesText = 
+      record.content.toLowerCase().includes(searchLower) || 
+      record.therapistName?.toLowerCase().includes(searchLower);
+
+    return matchesType && matchesText;
+  });
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-medium">Clinical History</h3>
           <p className="text-sm text-muted-foreground">
-            Progress notes, medical reports, and attachments.
+            Timeline of patient progress and reports.
           </p>
         </div>
 
-        {/* New Note Modal */}
+        {/* Modal */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" /> Add Note
             </Button>
           </DialogTrigger>
+          {/* Corregido max-w-150 a max-w-[600px] */}
           <DialogContent className="sm:max-w-150">
             <DialogHeader>
               <DialogTitle>Add Clinical Note</DialogTitle>
-              <DialogDescription>
-                Create a new entry in the patient's medical record.
-              </DialogDescription>
+              <DialogDescription>Create a new entry in the medical record.</DialogDescription>
             </DialogHeader>
-
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                
-                {/* Record Type Select */}
                 <FormField
                   control={form.control}
                   name="recordType"
@@ -206,9 +250,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
                         </FormControl>
                         <SelectContent>
                           {Object.entries(RECORD_TYPES).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>
-                              {label}
-                            </SelectItem>
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -216,44 +258,27 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
                     </FormItem>
                   )}
                 />
-
-                {/* Content Textarea */}
                 <FormField
                   control={form.control}
                   name="content"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Note Content</FormLabel>
+                      <FormLabel>Content</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="Describe patient progress, observations, or medical details..."
-                          className="min-h-37.5 resize-none"
-                          {...field}
-                        />
+                        {/* Corregido min-h-37.5 a min-h-[150px] */}
+                        <Textarea placeholder="Type your notes here..." className="min-h-37.5" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                {/* File Input */}
                 <FormItem>
-                  <FormLabel>Attachment (Optional)</FormLabel>
-                  <Input 
-                    type="file" 
-                    accept="image/*,.pdf" 
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                  />
-                  <p className="text-[0.8rem] text-muted-foreground">
-                    Supported formats: PDF, JPG, PNG. Max 5MB.
-                  </p>
+                  <FormLabel>Attachment</FormLabel>
+                  <Input type="file" accept="image/*,.pdf" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
                 </FormItem>
-
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
+                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save Note
                   </Button>
                 </div>
@@ -263,75 +288,131 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
         </Dialog>
       </div>
 
-      {/* Records List */}
-      <div className="space-y-4">
+      {/* --- BARRA DE FILTROS --- */}
+      <div className="flex flex-col md:flex-row gap-3 items-center bg-muted/20 p-3 rounded-lg border">
+        
+        {/* Buscador de Texto */}
+        <div className="relative w-full md:w-auto md:flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search within notes..." 
+            className="pl-9 bg-white" 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Filtro por Tipo */}
+        <div className="w-full md:w-62.5">
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="bg-white">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <SelectValue placeholder="Filter by Type" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Records</SelectItem>
+              {Object.entries(RECORD_TYPES).map(([key, label]) => (
+                <SelectItem key={key} value={key}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Botón Reset */}
+        {(filterType !== "ALL" || searchTerm) && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => { setFilterType("ALL"); setSearchTerm(""); }}
+            title="Clear filters"
+            className="shrink-0"
+          >
+            <XCircle className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+          </Button>
+        )}
+      </div>
+
+      {/* LISTA DE REGISTROS (Usamos filteredRecords) */}
+      <div className="space-y-6">
         {loading ? (
-          <div className="flex justify-center items-center h-32">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : records.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-center p-6 border rounded-lg bg-slate-50 border-dashed">
-            <FileText className="h-10 w-10 mb-2 opacity-20" />
-            <p className="text-muted-foreground">No clinical records found.</p>
+          <div className="flex justify-center h-32 items-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        ) : filteredRecords.length === 0 ? (
+          <div className="text-center py-12 border-2 border-dashed rounded-lg">
+            <div className="flex justify-center mb-3">
+               {records.length > 0 ? (
+                 <Search className="h-10 w-10 text-muted-foreground opacity-50" />
+               ) : (
+                 <FileText className="h-10 w-10 text-muted-foreground opacity-50" />
+               )}
+            </div>
+            <p className="text-muted-foreground font-medium">No records found.</p>
+            {records.length > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters.</p>
+            )}
           </div>
         ) : (
-          records.map((record) => (
-            <Card key={record.id} className="overflow-hidden">
-              <CardHeader className="bg-muted/30 pb-3">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      {getRecordLabel(record.recordType)}
-                      <Badge variant={getBadgeColor(record.recordType) as any}>
-                        {record.recordType}
-                      </Badge>
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground flex items-center">
-                      <span className="font-medium mr-1">
-                        {format(new Date(record.createdAt), "PPP", { locale: enUS })}
-                      </span>
-                      • 
-                      <span className="ml-1">
-                        {format(new Date(record.createdAt), "p", { locale: enUS })}
-                      </span>
-                    </p>
+          filteredRecords.map((record) => {
+            const styles = getTypeStyles(record.recordType);
+            
+            return (
+              <Card key={record.id} className={cn("overflow-hidden border-l-4 shadow-sm animate-in fade-in slide-in-from-bottom-2", styles.border)}>
+                <CardContent className="p-5">
+                  {/* Encabezado */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 border-b pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-base flex items-center gap-2">
+                          {getRecordLabel(record.recordType)}
+                          <Badge className={cn("font-normal border-0 px-2 py-0.5 text-xs rounded-md", styles.badge)}>
+                            {record.recordType}
+                          </Badge>
+                        </h4>
+                        <div className="flex items-center text-xs text-muted-foreground gap-3">
+                           <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {format(new Date(record.createdAt), "PPP 'at' p", { locale: enUS })}
+                           </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Terapeuta */}
+                    <div className="flex items-center bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 self-start sm:self-center">
+                      <Stethoscope className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                      <span className="text-xs font-medium text-slate-700">{record.therapistName}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center text-xs text-muted-foreground bg-white px-2 py-1 rounded border shadow-sm">
-                    <Stethoscope className="w-3 h-3 mr-1" />
-                    {record.therapistName}
+                  
+                  {/* Contenido */}
+                  <div className="pl-1">
+                    {renderFormattedContent(record.content)}
                   </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-4">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-                  {record.content}
-                </p>
 
-                {/* Attachments Section */}
-                {record.attachments && record.attachments.length > 0 && (
-                  <div className="mt-4 pt-3 border-t">
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">Attachments:</p>
-                    <div className="flex flex-wrap gap-2">
+                  {/* Adjuntos */}
+                  {record.attachments && record.attachments.length > 0 && (
+                    <div className="mt-5 pt-3 border-t flex flex-wrap gap-2">
                       {record.attachments.map((att) => (
                         <a
                           key={att.id}
                           href={att.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-sm transition-colors border"
+                          className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border rounded-md text-xs transition-colors group"
                         >
-                          <Paperclip className="h-3.5 w-3.5" />
-                          <span className="truncate max-w-50">{att.filename}</span>
+                          <Paperclip className="h-3.5 w-3.5 text-slate-500 group-hover:text-primary" />
+                          {/* Corregido max-w-37.5 a max-w-[150px] */}
+                          <span className="truncate max-w-37.5 font-medium">{att.filename}</span>
                           <Download className="h-3 w-3 ml-1 opacity-50" />
                         </a>
                       ))}
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
