@@ -82,20 +82,28 @@ const login = useCallback(async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await authApi.login(data)
 
     setToken(response.token)
-    
-    // Al loguear, guardamos los datos básicos. 
-    // El email se cargará luego con 'me()' si recargas, o no hace falta de inmediato.
-    const loggedUser: AuthUser = {
-      id: response.id,
-      username: response.username,
-      fullName: response.fullName || response.username,
-      role: response.role,
-      // ELIMINADO: response.email (porque el backend no lo envía en el login)
-    }
-    
-    setUser(loggedUser)
     localStorage.setItem("token", response.token)
-    
+
+    try {
+      const fullProfile = await authApi.me()
+
+      setUser({
+        id: fullProfile.id,
+        username: fullProfile.username,
+        fullName: fullProfile.fullName || fullProfile.username,
+        role: fullProfile.role
+      })
+
+    } catch (error) {
+      console.warn("Could not fetch full profile after login, using basic info")
+      setUser({
+        id: response.id,
+        username: response.username,
+        fullName: response.fullName || response.username,
+        role: response.role,
+      })
+    }
+
     return response
   }, [])
 
@@ -112,7 +120,6 @@ const login = useCallback(async (data: LoginRequest): Promise<AuthResponse> => {
     login,
     register,
     logout: handleLogout,
-    // --- CAMBIO 2: EXPONER LA FUNCIÓN ---
     setUser, 
   }
 

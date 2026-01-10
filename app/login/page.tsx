@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -19,7 +18,7 @@ interface FormErrors {
 }
 
 export default function LoginPage() {
-  const { login, isAuthenticated, isAdmin, isLoading: authLoading } = useAuth()
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
 
   const [formData, setFormData] = useState({
@@ -30,12 +29,12 @@ export default function LoginPage() {
   const [apiError, setApiError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Redirect if already authenticated
+  // CAMBIO 1: Redirigir siempre al dashboard si ya está autenticado
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.push(isAdmin ? "/users" : "/dashboard")
+      router.push("/dashboard") // Antes discriminaba por isAdmin
     }
-  }, [isAuthenticated, isAdmin, authLoading, router])
+  }, [isAuthenticated, authLoading, router])
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -54,11 +53,11 @@ export default function LoginPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
-    // Clear field error when typing
+    // Limpiar error del campo al escribir
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }))
     }
-    // Clear API error when typing
+    // Limpiar error de API al escribir
     if (apiError) {
       setApiError(null)
     }
@@ -72,13 +71,9 @@ export default function LoginPage() {
 
     setIsSubmitting(true)
     try {
-      const response = await login(formData)
-      // Redirect based on role
-      if (response.role === "ADMIN") {
-        router.push("/users")
-      } else {
-        router.push("/dashboard")
-      }
+      await login(formData)
+      // CAMBIO 2: Redirigir siempre al dashboard tras el login exitoso
+      router.push("/dashboard") 
     } catch (error) {
       setApiError(getErrorMessage(error))
     } finally {

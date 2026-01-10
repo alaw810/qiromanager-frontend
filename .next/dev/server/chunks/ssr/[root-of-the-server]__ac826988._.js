@@ -616,16 +616,24 @@ function AuthProvider({ children }) {
     const login = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (data)=>{
         const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$auth$2d$api$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["authApi"].login(data);
         setToken(response.token);
-        // Al loguear, guardamos los datos básicos. 
-        // El email se cargará luego con 'me()' si recargas, o no hace falta de inmediato.
-        const loggedUser = {
-            id: response.id,
-            username: response.username,
-            fullName: response.fullName || response.username,
-            role: response.role
-        };
-        setUser(loggedUser);
         localStorage.setItem("token", response.token);
+        try {
+            const fullProfile = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$auth$2d$api$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["authApi"].me();
+            setUser({
+                id: fullProfile.id,
+                username: fullProfile.username,
+                fullName: fullProfile.fullName || fullProfile.username,
+                role: fullProfile.role
+            });
+        } catch (error) {
+            console.warn("Could not fetch full profile after login, using basic info");
+            setUser({
+                id: response.id,
+                username: response.username,
+                fullName: response.fullName || response.username,
+                role: response.role
+            });
+        }
         return response;
     }, []);
     const register = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (data)=>{
@@ -640,7 +648,6 @@ function AuthProvider({ children }) {
         login,
         register,
         logout: handleLogout,
-        // --- CAMBIO 2: EXPONER LA FUNCIÓN ---
         setUser
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AuthContext.Provider, {
@@ -648,7 +655,7 @@ function AuthProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/contexts/auth-context.tsx",
-        lineNumber: 119,
+        lineNumber: 126,
         columnNumber: 10
     }, this);
 }

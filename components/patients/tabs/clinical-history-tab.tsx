@@ -14,9 +14,9 @@ import {
   Download, 
   Stethoscope,
   Calendar,
-  Filter, // Nuevo
-  Search, // Nuevo
-  XCircle // Nuevo
+  Filter, 
+  Search, 
+  XCircle 
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -78,14 +78,9 @@ const getTypeStyles = (type: string) => {
   }
 };
 
-// --- Validation Schema ---
 const formSchema = z.object({
-  recordType: z.string({
-    required_error: "Please select a record type.",
-  }),
-  content: z.string().min(5, {
-    message: "The note must be at least 5 characters long.",
-  }),
+  recordType: z.string({ required_error: "Please select a record type." }),
+  content: z.string().min(5, { message: "The note must be at least 5 characters long." }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -100,7 +95,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
-  // --- Estados de Filtrado ---
+  // Filtros
   const [filterType, setFilterType] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -108,10 +103,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      recordType: "EVOLUTION", 
-      content: "",
-    },
+    defaultValues: { recordType: "EVOLUTION", content: "" },
   });
 
   const loadRecords = async () => {
@@ -122,11 +114,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
       setRecords(sortedData);
     } catch (error) {
       console.error("Error loading history:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load clinical history.",
-      });
+      toast({ variant: "destructive", title: "Error", description: "Failed to load clinical history." });
     } finally {
       setLoading(false);
     }
@@ -145,22 +133,14 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
         selectedFile || undefined
       );
 
-      toast({
-        title: "Record created",
-        description: "The clinical note has been saved successfully.",
-      });
-
+      toast({ title: "Record created", description: "The clinical note has been saved successfully." });
       setIsDialogOpen(false);
       form.reset({ recordType: "EVOLUTION", content: "" });
       setSelectedFile(null);
       loadRecords();
     } catch (error) {
       console.error("Error creating record:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "There was a problem saving the note.",
-      });
+      toast({ variant: "destructive", title: "Error", description: "There was a problem saving the note." });
     }
   };
 
@@ -168,45 +148,82 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
     return RECORD_TYPES[type as keyof typeof RECORD_TYPES] || type.replace(/_/g, " ");
   };
 
+  // --- PARSEADOR VISUAL MEJORADO ---
   const renderFormattedContent = (content: string) => {
     if (!content) return null;
 
     const lines = content.split('\n');
 
     return (
-      <div className="space-y-2 text-sm text-gray-700">
+      <div className="space-y-3 text-sm text-gray-700 mt-2">
         {lines.map((line, index) => {
-          if (line.includes("Treatment Session performed")) {
-             return <p key={index} className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{line}</p>
+          const trimmedLine = line.trim();
+          if (!trimmedLine) return null;
+
+          // CASO 1: Título de sesión (gris pequeño)
+          // Detecta "Treatment Session performed..."
+          if (trimmedLine.toLowerCase().includes("treatment session performed")) {
+             return (
+               <div key={index} className="pb-2 border-b border-dashed border-gray-200 mb-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {trimmedLine}
+                  </p>
+               </div>
+             );
           }
 
-          const match = line.match(/^([A-Za-zÁ-Úá-ú\s]+):(.+)/);
+          // CASO 2: "Session Notes:" (Lo separamos si aparece pegado)
+          // Si la línea empieza por "Session Notes:", lo tratamos como título
+          if (trimmedLine.toLowerCase().startsWith("session notes:")) {
+             // Extraemos lo que venga después de los dos puntos
+             const restOfLine = trimmedLine.substring("Session Notes:".length).trim();
+             
+             return (
+               <div key={index}>
+                  <p className="text-xs font-bold text-gray-500 mb-1">SESSION NOTES</p>
+                  {/* Si hay texto después (ej: "Session Notes: Diagnóstico..."), lo renderizamos debajo recursivamente o directo */}
+                  {restOfLine && (
+                    <div className="pl-0 mt-1">
+                      {/* Llamada recursiva simple para procesar el resto si tiene estructura */}
+                      {renderFormattedContent(restOfLine)} 
+                    </div>
+                  )}
+               </div>
+             );
+          }
+
+          // CASO 3: Clave: Valor (Diagnóstico, Procedimiento, etc.)
+          // Detecta [Clave]: Valor ó Clave: Valor
+          const match = trimmedLine.match(/^(?:\[?([A-Za-zÁ-Úá-ú\s]+)\]?):\s*(.+)/);
           
           if (match) {
+            const label = match[1].trim(); // Ej: Diagnosis
+            const value = match[2].trim(); // Ej: Gripe
+
             return (
-              <div key={index} className="flex flex-col sm:flex-row sm:gap-2">
-                {/* Corregido min-w-30 a min-w-[120px] */}
-                <span className="font-semibold text-gray-900 min-w-30">{match[1]}:</span>
-                <span>{match[2]}</span>
+              <div key={index} className="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-1">
+                <span className="font-semibold text-gray-900 min-w-30 shrink-0 text-right sm:text-left">
+                  {label}:
+                </span>
+                <span className="text-gray-600">{value}</span>
               </div>
             );
           }
 
-          if (line.trim() === "") return <br key={index} />;
-          return <p key={index} className="leading-relaxed">{line}</p>;
+          // CASO 4: Texto normal
+          return <p key={index} className="leading-relaxed pl-1">{trimmedLine}</p>;
         })}
       </div>
     );
   };
 
-  // --- LÓGICA DE FILTRADO ---
+  // --- FILTRADO ---
   const filteredRecords = records.filter((record) => {
     const matchesType = filterType === "ALL" || record.recordType === filterType;
     const searchLower = searchTerm.toLowerCase();
     const matchesText = 
       record.content.toLowerCase().includes(searchLower) || 
       record.therapistName?.toLowerCase().includes(searchLower);
-
     return matchesType && matchesText;
   });
 
@@ -216,19 +233,13 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-medium">Clinical History</h3>
-          <p className="text-sm text-muted-foreground">
-            Timeline of patient progress and reports.
-          </p>
+          <p className="text-sm text-muted-foreground">Timeline of patient progress and reports.</p>
         </div>
 
-        {/* Modal */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Note
-            </Button>
+            <Button><Plus className="mr-2 h-4 w-4" /> Add Note</Button>
           </DialogTrigger>
-          {/* Corregido max-w-150 a max-w-[600px] */}
           <DialogContent className="sm:max-w-150">
             <DialogHeader>
               <DialogTitle>Add Clinical Note</DialogTitle>
@@ -243,11 +254,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
                     <FormItem>
                       <FormLabel>Record Type</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                        </FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                         <SelectContent>
                           {Object.entries(RECORD_TYPES).map(([key, label]) => (
                             <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -265,8 +272,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
                     <FormItem>
                       <FormLabel>Content</FormLabel>
                       <FormControl>
-                        {/* Corregido min-h-37.5 a min-h-[150px] */}
-                        <Textarea placeholder="Type your notes here..." className="min-h-37.5" {...field} />
+                        <Textarea placeholder="Type notes..." className="min-h-37.5" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -278,8 +284,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
                 </FormItem>
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Note
+                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Note
                   </Button>
                 </div>
               </form>
@@ -288,21 +293,12 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
         </Dialog>
       </div>
 
-      {/* --- BARRA DE FILTROS --- */}
+      {/* Filtros */}
       <div className="flex flex-col md:flex-row gap-3 items-center bg-muted/20 p-3 rounded-lg border">
-        
-        {/* Buscador de Texto */}
         <div className="relative w-full md:w-auto md:flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search within notes..." 
-            className="pl-9 bg-white" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <Input placeholder="Search within notes..." className="pl-9 bg-white" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
-
-        {/* Filtro por Tipo */}
         <div className="w-full md:w-62.5">
           <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="bg-white">
@@ -319,47 +315,28 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
             </SelectContent>
           </Select>
         </div>
-
-        {/* Botón Reset */}
         {(filterType !== "ALL" || searchTerm) && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => { setFilterType("ALL"); setSearchTerm(""); }}
-            title="Clear filters"
-            className="shrink-0"
-          >
+          <Button variant="ghost" size="icon" onClick={() => { setFilterType("ALL"); setSearchTerm(""); }} className="shrink-0">
             <XCircle className="h-4 w-4 text-muted-foreground hover:text-destructive" />
           </Button>
         )}
       </div>
 
-      {/* LISTA DE REGISTROS (Usamos filteredRecords) */}
+      {/* Lista */}
       <div className="space-y-6">
         {loading ? (
           <div className="flex justify-center h-32 items-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         ) : filteredRecords.length === 0 ? (
           <div className="text-center py-12 border-2 border-dashed rounded-lg">
-            <div className="flex justify-center mb-3">
-               {records.length > 0 ? (
-                 <Search className="h-10 w-10 text-muted-foreground opacity-50" />
-               ) : (
-                 <FileText className="h-10 w-10 text-muted-foreground opacity-50" />
-               )}
-            </div>
-            <p className="text-muted-foreground font-medium">No records found.</p>
-            {records.length > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters.</p>
-            )}
+            <FileText className="h-10 w-10 mx-auto text-muted-foreground opacity-50 mb-3" />
+            <p className="text-muted-foreground">No records found.</p>
           </div>
         ) : (
           filteredRecords.map((record) => {
             const styles = getTypeStyles(record.recordType);
-            
             return (
               <Card key={record.id} className={cn("overflow-hidden border-l-4 shadow-sm animate-in fade-in slide-in-from-bottom-2", styles.border)}>
                 <CardContent className="p-5">
-                  {/* Encabezado */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 border-b pb-4">
                     <div className="flex items-center gap-3">
                       <div className="space-y-1">
@@ -377,32 +354,21 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Terapeuta */}
                     <div className="flex items-center bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 self-start sm:self-center">
                       <Stethoscope className="w-3.5 h-3.5 mr-2 text-slate-500" />
                       <span className="text-xs font-medium text-slate-700">{record.therapistName}</span>
                     </div>
                   </div>
                   
-                  {/* Contenido */}
                   <div className="pl-1">
                     {renderFormattedContent(record.content)}
                   </div>
 
-                  {/* Adjuntos */}
                   {record.attachments && record.attachments.length > 0 && (
                     <div className="mt-5 pt-3 border-t flex flex-wrap gap-2">
                       {record.attachments.map((att) => (
-                        <a
-                          key={att.id}
-                          href={att.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border rounded-md text-xs transition-colors group"
-                        >
+                        <a key={att.id} href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border rounded-md text-xs transition-colors group">
                           <Paperclip className="h-3.5 w-3.5 text-slate-500 group-hover:text-primary" />
-                          {/* Corregido max-w-37.5 a max-w-[150px] */}
                           <span className="truncate max-w-37.5 font-medium">{att.filename}</span>
                           <Download className="h-3 w-3 ml-1 opacity-50" />
                         </a>

@@ -2339,7 +2339,6 @@ const getTypeStyles = (type)=>{
             };
     }
 };
-// --- Validation Schema ---
 const formSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v3$2f$types$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["object"]({
     recordType: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v3$2f$types$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["string"]({
         required_error: "Please select a record type."
@@ -2354,7 +2353,7 @@ function ClinicalHistoryTab({ patientId }) {
     const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(true);
     const [isDialogOpen, setIsDialogOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [selectedFile, setSelectedFile] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    // --- Estados de Filtrado ---
+    // Filtros
     const [filterType, setFilterType] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("ALL");
     const [searchTerm, setSearchTerm] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("");
     const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"])();
@@ -2415,73 +2414,116 @@ function ClinicalHistoryTab({ patientId }) {
     const getRecordLabel = (type)=>{
         return RECORD_TYPES[type] || type.replace(/_/g, " ");
     };
+    // --- PARSEADOR VISUAL MEJORADO ---
     const renderFormattedContent = (content)=>{
         if (!content) return null;
         const lines = content.split('\n');
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-            className: "space-y-2 text-sm text-gray-700",
+            className: "space-y-3 text-sm text-gray-700 mt-2",
             children: lines.map((line, index)=>{
-                if (line.includes("Treatment Session performed")) {
-                    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                        className: "text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2",
-                        children: line
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return null;
+                // CASO 1: Título de sesión (gris pequeño)
+                // Detecta "Treatment Session performed..."
+                if (trimmedLine.toLowerCase().includes("treatment session performed")) {
+                    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "pb-2 border-b border-dashed border-gray-200 mb-2",
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                            className: "text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                            children: trimmedLine
+                        }, void 0, false, {
+                            fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
+                            lineNumber: 168,
+                            columnNumber: 19
+                        }, this)
                     }, index, false, {
                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                        lineNumber: 180,
-                        columnNumber: 21
+                        lineNumber: 167,
+                        columnNumber: 16
                     }, this);
                 }
-                const match = line.match(/^([A-Za-zÁ-Úá-ú\s]+):(.+)/);
-                if (match) {
+                // CASO 2: "Session Notes:" (Lo separamos si aparece pegado)
+                // Si la línea empieza por "Session Notes:", lo tratamos como título
+                if (trimmedLine.toLowerCase().startsWith("session notes:")) {
+                    // Extraemos lo que venga después de los dos puntos
+                    const restOfLine = trimmedLine.substring("Session Notes:".length).trim();
                     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex flex-col sm:flex-row sm:gap-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "text-xs font-bold text-gray-500 mb-1",
+                                children: "SESSION NOTES"
+                            }, void 0, false, {
+                                fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
+                                lineNumber: 183,
+                                columnNumber: 19
+                            }, this),
+                            restOfLine && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "pl-0 mt-1",
+                                children: renderFormattedContent(restOfLine)
+                            }, void 0, false, {
+                                fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
+                                lineNumber: 186,
+                                columnNumber: 21
+                            }, this)
+                        ]
+                    }, index, true, {
+                        fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
+                        lineNumber: 182,
+                        columnNumber: 16
+                    }, this);
+                }
+                // CASO 3: Clave: Valor (Diagnóstico, Procedimiento, etc.)
+                // Detecta [Clave]: Valor ó Clave: Valor
+                const match = trimmedLine.match(/^(?:\[?([A-Za-zÁ-Úá-ú\s]+)\]?):\s*(.+)/);
+                if (match) {
+                    const label = match[1].trim(); // Ej: Diagnosis
+                    const value = match[2].trim(); // Ej: Gripe
+                    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex flex-col sm:flex-row sm:items-start sm:gap-4 py-1",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                className: "font-semibold text-gray-900 min-w-30",
+                                className: "font-semibold text-gray-900 min-w-30 shrink-0 text-right sm:text-left",
                                 children: [
-                                    match[1],
+                                    label,
                                     ":"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 189,
+                                lineNumber: 205,
                                 columnNumber: 17
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                children: match[2]
+                                className: "text-gray-600",
+                                children: value
                             }, void 0, false, {
                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 190,
+                                lineNumber: 208,
                                 columnNumber: 17
                             }, this)
                         ]
                     }, index, true, {
                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                        lineNumber: 187,
+                        lineNumber: 204,
                         columnNumber: 15
                     }, this);
                 }
-                if (line.trim() === "") return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("br", {}, index, false, {
-                    fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                    lineNumber: 195,
-                    columnNumber: 42
-                }, this);
+                // CASO 4: Texto normal
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                    className: "leading-relaxed",
-                    children: line
+                    className: "leading-relaxed pl-1",
+                    children: trimmedLine
                 }, index, false, {
                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                    lineNumber: 196,
+                    lineNumber: 214,
                     columnNumber: 18
                 }, this);
             })
         }, void 0, false, {
             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-            lineNumber: 177,
+            lineNumber: 158,
             columnNumber: 7
         }, this);
     };
-    // --- LÓGICA DE FILTRADO ---
+    // --- FILTRADO ---
     const filteredRecords = records.filter((record)=>{
         const matchesType = filterType === "ALL" || record.recordType === filterType;
         const searchLower = searchTerm.toLowerCase();
@@ -2501,7 +2543,7 @@ function ClinicalHistoryTab({ patientId }) {
                                 children: "Clinical History"
                             }, void 0, false, {
                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 218,
+                                lineNumber: 235,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2509,13 +2551,13 @@ function ClinicalHistoryTab({ patientId }) {
                                 children: "Timeline of patient progress and reports."
                             }, void 0, false, {
                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 219,
+                                lineNumber: 236,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                        lineNumber: 217,
+                        lineNumber: 234,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -2530,19 +2572,19 @@ function ClinicalHistoryTab({ patientId }) {
                                             className: "mr-2 h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                            lineNumber: 228,
-                                            columnNumber: 15
+                                            lineNumber: 241,
+                                            columnNumber: 21
                                         }, this),
                                         " Add Note"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                    lineNumber: 227,
+                                    lineNumber: 241,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 226,
+                                lineNumber: 240,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
@@ -2554,20 +2596,20 @@ function ClinicalHistoryTab({ patientId }) {
                                                 children: "Add Clinical Note"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                lineNumber: 234,
+                                                lineNumber: 245,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                                 children: "Create a new entry in the medical record."
                                             }, void 0, false, {
                                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                lineNumber: 235,
+                                                lineNumber: 246,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                        lineNumber: 233,
+                                        lineNumber: 244,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Form"], {
@@ -2585,7 +2627,7 @@ function ClinicalHistoryTab({ patientId }) {
                                                                     children: "Record Type"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                    lineNumber: 244,
+                                                                    lineNumber: 255,
                                                                     columnNumber: 23
                                                                 }, void 0),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -2598,17 +2640,17 @@ function ClinicalHistoryTab({ patientId }) {
                                                                                     placeholder: "Select type"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                                    lineNumber: 248,
-                                                                                    columnNumber: 29
+                                                                                    lineNumber: 257,
+                                                                                    columnNumber: 53
                                                                                 }, void 0)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                                lineNumber: 247,
-                                                                                columnNumber: 27
+                                                                                lineNumber: 257,
+                                                                                columnNumber: 38
                                                                             }, void 0)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                            lineNumber: 246,
+                                                                            lineNumber: 257,
                                                                             columnNumber: 25
                                                                         }, void 0),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -2617,34 +2659,34 @@ function ClinicalHistoryTab({ patientId }) {
                                                                                     children: label
                                                                                 }, key, false, {
                                                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                                    lineNumber: 253,
+                                                                                    lineNumber: 260,
                                                                                     columnNumber: 29
                                                                                 }, void 0))
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                            lineNumber: 251,
+                                                                            lineNumber: 258,
                                                                             columnNumber: 25
                                                                         }, void 0)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                    lineNumber: 245,
+                                                                    lineNumber: 256,
                                                                     columnNumber: 23
                                                                 }, void 0),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormMessage"], {}, void 0, false, {
                                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                    lineNumber: 257,
+                                                                    lineNumber: 264,
                                                                     columnNumber: 23
                                                                 }, void 0)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                            lineNumber: 243,
+                                                            lineNumber: 254,
                                                             columnNumber: 21
                                                         }, void 0)
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                    lineNumber: 239,
+                                                    lineNumber: 250,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormField"], {
@@ -2656,38 +2698,38 @@ function ClinicalHistoryTab({ patientId }) {
                                                                     children: "Content"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                    lineNumber: 266,
+                                                                    lineNumber: 273,
                                                                     columnNumber: 23
                                                                 }, void 0),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormControl"], {
                                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
-                                                                        placeholder: "Type your notes here...",
+                                                                        placeholder: "Type notes...",
                                                                         className: "min-h-37.5",
                                                                         ...field
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                        lineNumber: 269,
+                                                                        lineNumber: 275,
                                                                         columnNumber: 25
                                                                     }, void 0)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                    lineNumber: 267,
+                                                                    lineNumber: 274,
                                                                     columnNumber: 23
                                                                 }, void 0),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormMessage"], {}, void 0, false, {
                                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                    lineNumber: 271,
+                                                                    lineNumber: 277,
                                                                     columnNumber: 23
                                                                 }, void 0)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                            lineNumber: 265,
+                                                            lineNumber: 272,
                                                             columnNumber: 21
                                                         }, void 0)
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                    lineNumber: 261,
+                                                    lineNumber: 268,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FormItem"], {
@@ -2696,7 +2738,7 @@ function ClinicalHistoryTab({ patientId }) {
                                                             children: "Attachment"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                            lineNumber: 276,
+                                                            lineNumber: 282,
                                                             columnNumber: 19
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2705,13 +2747,13 @@ function ClinicalHistoryTab({ patientId }) {
                                                             onChange: (e)=>setSelectedFile(e.target.files?.[0] || null)
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                            lineNumber: 277,
+                                                            lineNumber: 283,
                                                             columnNumber: 19
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                    lineNumber: 275,
+                                                    lineNumber: 281,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2724,48 +2766,48 @@ function ClinicalHistoryTab({ patientId }) {
                                                                 className: "mr-2 h-4 w-4 animate-spin"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                lineNumber: 281,
+                                                                lineNumber: 287,
                                                                 columnNumber: 53
                                                             }, this),
-                                                            "Save Note"
+                                                            " Save Note"
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                        lineNumber: 280,
+                                                        lineNumber: 286,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                    lineNumber: 279,
+                                                    lineNumber: 285,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                            lineNumber: 238,
+                                            lineNumber: 249,
                                             columnNumber: 15
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                        lineNumber: 237,
+                                        lineNumber: 248,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 232,
+                                lineNumber: 243,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                        lineNumber: 225,
+                        lineNumber: 239,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                lineNumber: 216,
+                lineNumber: 233,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2778,7 +2820,7 @@ function ClinicalHistoryTab({ patientId }) {
                                 className: "absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
                             }, void 0, false, {
                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 296,
+                                lineNumber: 299,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2788,13 +2830,13 @@ function ClinicalHistoryTab({ patientId }) {
                                 onChange: (e)=>setSearchTerm(e.target.value)
                             }, void 0, false, {
                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 297,
+                                lineNumber: 300,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                        lineNumber: 295,
+                        lineNumber: 298,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2812,25 +2854,25 @@ function ClinicalHistoryTab({ patientId }) {
                                                 className: "w-4 h-4 text-muted-foreground"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                lineNumber: 310,
+                                                lineNumber: 306,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {
                                                 placeholder: "Filter by Type"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                lineNumber: 311,
+                                                lineNumber: 307,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                        lineNumber: 309,
+                                        lineNumber: 305,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                    lineNumber: 308,
+                                    lineNumber: 304,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -2840,7 +2882,7 @@ function ClinicalHistoryTab({ patientId }) {
                                             children: "All Records"
                                         }, void 0, false, {
                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                            lineNumber: 315,
+                                            lineNumber: 311,
                                             columnNumber: 15
                                         }, this),
                                         Object.entries(RECORD_TYPES).map(([key, label])=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -2848,24 +2890,24 @@ function ClinicalHistoryTab({ patientId }) {
                                                 children: label
                                             }, key, false, {
                                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                lineNumber: 317,
+                                                lineNumber: 313,
                                                 columnNumber: 17
                                             }, this))
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                    lineNumber: 314,
+                                    lineNumber: 310,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                            lineNumber: 307,
+                            lineNumber: 303,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                        lineNumber: 306,
+                        lineNumber: 302,
                         columnNumber: 9
                     }, this),
                     (filterType !== "ALL" || searchTerm) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2875,24 +2917,23 @@ function ClinicalHistoryTab({ patientId }) {
                             setFilterType("ALL");
                             setSearchTerm("");
                         },
-                        title: "Clear filters",
                         className: "shrink-0",
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__XCircle$3e$__["XCircle"], {
                             className: "h-4 w-4 text-muted-foreground hover:text-destructive"
                         }, void 0, false, {
                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                            lineNumber: 332,
+                            lineNumber: 320,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                        lineNumber: 325,
+                        lineNumber: 319,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                lineNumber: 292,
+                lineNumber: 297,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2903,56 +2944,35 @@ function ClinicalHistoryTab({ patientId }) {
                         className: "h-8 w-8 animate-spin text-primary"
                     }, void 0, false, {
                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                        lineNumber: 340,
+                        lineNumber: 328,
                         columnNumber: 66
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                    lineNumber: 340,
+                    lineNumber: 328,
                     columnNumber: 11
                 }, this) : filteredRecords.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "text-center py-12 border-2 border-dashed rounded-lg",
                     children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "flex justify-center mb-3",
-                            children: records.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$search$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Search$3e$__["Search"], {
-                                className: "h-10 w-10 text-muted-foreground opacity-50"
-                            }, void 0, false, {
-                                fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 345,
-                                columnNumber: 18
-                            }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$file$2d$text$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__FileText$3e$__["FileText"], {
-                                className: "h-10 w-10 text-muted-foreground opacity-50"
-                            }, void 0, false, {
-                                fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                lineNumber: 347,
-                                columnNumber: 18
-                            }, this)
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$file$2d$text$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__FileText$3e$__["FileText"], {
+                            className: "h-10 w-10 mx-auto text-muted-foreground opacity-50 mb-3"
                         }, void 0, false, {
                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                            lineNumber: 343,
+                            lineNumber: 331,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-muted-foreground font-medium",
+                            className: "text-muted-foreground",
                             children: "No records found."
                         }, void 0, false, {
                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                            lineNumber: 350,
+                            lineNumber: 332,
                             columnNumber: 13
-                        }, this),
-                        records.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-sm text-muted-foreground mt-1",
-                            children: "Try adjusting your filters."
-                        }, void 0, false, {
-                            fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                            lineNumber: 352,
-                            columnNumber: 15
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                    lineNumber: 342,
+                    lineNumber: 330,
                     columnNumber: 11
                 }, this) : filteredRecords.map((record)=>{
                     const styles = getTypeStyles(record.recordType);
@@ -2978,13 +2998,13 @@ function ClinicalHistoryTab({ patientId }) {
                                                                 children: record.recordType
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                lineNumber: 368,
+                                                                lineNumber: 345,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                        lineNumber: 366,
+                                                        lineNumber: 343,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2996,7 +3016,7 @@ function ClinicalHistoryTab({ patientId }) {
                                                                     className: "w-3 h-3"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                                    lineNumber: 374,
+                                                                    lineNumber: 351,
                                                                     columnNumber: 31
                                                                 }, this),
                                                                 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(new Date(record.createdAt), "PPP 'at' p", {
@@ -3005,23 +3025,23 @@ function ClinicalHistoryTab({ patientId }) {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                            lineNumber: 373,
+                                                            lineNumber: 350,
                                                             columnNumber: 28
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                        lineNumber: 372,
+                                                        lineNumber: 349,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                lineNumber: 365,
+                                                lineNumber: 342,
                                                 columnNumber: 23
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                            lineNumber: 364,
+                                            lineNumber: 341,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3031,7 +3051,7 @@ function ClinicalHistoryTab({ patientId }) {
                                                     className: "w-3.5 h-3.5 mr-2 text-slate-500"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                    lineNumber: 383,
+                                                    lineNumber: 358,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3039,19 +3059,19 @@ function ClinicalHistoryTab({ patientId }) {
                                                     children: record.therapistName
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                    lineNumber: 384,
+                                                    lineNumber: 359,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                            lineNumber: 382,
+                                            lineNumber: 357,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                    lineNumber: 363,
+                                    lineNumber: 340,
                                     columnNumber: 19
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3059,7 +3079,7 @@ function ClinicalHistoryTab({ patientId }) {
                                     children: renderFormattedContent(record.content)
                                 }, void 0, false, {
                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                    lineNumber: 389,
+                                    lineNumber: 363,
                                     columnNumber: 19
                                 }, this),
                                 record.attachments && record.attachments.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3074,7 +3094,7 @@ function ClinicalHistoryTab({ patientId }) {
                                                     className: "h-3.5 w-3.5 text-slate-500 group-hover:text-primary"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                    lineNumber: 404,
+                                                    lineNumber: 371,
                                                     columnNumber: 27
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3082,48 +3102,48 @@ function ClinicalHistoryTab({ patientId }) {
                                                     children: att.filename
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                    lineNumber: 406,
+                                                    lineNumber: 372,
                                                     columnNumber: 27
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$download$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Download$3e$__["Download"], {
                                                     className: "h-3 w-3 ml-1 opacity-50"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                                    lineNumber: 407,
+                                                    lineNumber: 373,
                                                     columnNumber: 27
                                                 }, this)
                                             ]
                                         }, att.id, true, {
                                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                            lineNumber: 397,
+                                            lineNumber: 370,
                                             columnNumber: 25
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                                    lineNumber: 395,
+                                    lineNumber: 368,
                                     columnNumber: 21
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                            lineNumber: 361,
+                            lineNumber: 339,
                             columnNumber: 17
                         }, this)
                     }, record.id, false, {
                         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                        lineNumber: 360,
+                        lineNumber: 338,
                         columnNumber: 15
                     }, this);
                 })
             }, void 0, false, {
                 fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-                lineNumber: 338,
+                lineNumber: 326,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/patients/tabs/clinical-history-tab.tsx",
-        lineNumber: 214,
+        lineNumber: 231,
         columnNumber: 5
     }, this);
 }

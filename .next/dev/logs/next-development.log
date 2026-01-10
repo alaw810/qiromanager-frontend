@@ -23,3 +23,15 @@
 [01:13:29.694] Browser ERROR   {"code":"ERR_BAD_REQUEST","config":{"adapter":["xhr","http","fetch"],"allowAbsoluteUrls":true,"baseURL":"http://localhost:8080","env":{},"headers":{"Accept":"application/json","Authorization":"Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0aGVyYXBpc3QxIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NjgwNDA2MTEsImV4cCI6MTc2ODA0NDIxMX0.fOdZctxZVz_T3SL8usY4EnMRTuSHB0rewVEMJDHdw-kPrT0mxc5oM-_gmC2vxlGT"},"maxBodyLength":-1,"maxContentLength":-1,"method":"get","params":{},"timeout":0,"transformRequest":[null],"transformResponse":[null],"transitional":{"clarifyTimeoutError":false,"forcedJSONParsing":true,"silentJSONParsing":true},"url":"/api/v1/patients","xsrfCookieName":"XSRF-TOKEN","xsrfHeaderName":"X-XSRF-TOKEN"},"message":"Request failed with status code 401","name":"AxiosError","stack":"AxiosError: Request failed with status code 401\n    at settle (http://localhost:3000/_next/static/chunks/node_modules_97c36ca5._.js:10771:16)\n    at XMLHttpRequest.onloadend (http://localhost:3000/_next/static/chunks/node_modules_97c36ca5._.js:11286:174)\n    at Axios.request (http://localhost:3000/_next/static/chunks/node_modules_97c36ca5._.js:12090:49)\n    at async Object.getAll (http://localhost:3000/_next/static/chunks/_c810d755._.js:1066:26)\n    at async PatientsPageContent.useCallback[fetchPatients] (http://localhost:3000/_next/static/chunks/_9b32b3e8._.js:2079:28)","status":401}
 [01:13:29.902] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
 [01:14:15.967] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:19:23.655] Server  LOG      ✓ Compiled in 948ms
+[01:19:27.887] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:19:41.514] Server  LOG      ✓ Compiled in 117ms
+[06:07:05.251] Server  LOG      ✓ Compiled in 1353ms
+[06:08:53.862] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[06:08:54.632] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[06:16:22.462] Server  LOG      ✓ Compiled in 779ms
+[06:18:50.372] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[06:18:53.732] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[06:48:46.798] Server  WARN     ⚠ Fast Refresh had to perform a full reload when ./contexts/auth-context.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[06:48:47.897] Server  LOG      ✓ Compiled in 5ms
+[06:48:48.607] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
