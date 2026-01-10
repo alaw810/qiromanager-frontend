@@ -1411,7 +1411,7 @@ function PatientDetailsContent() {
                                         lineNumber: 195,
                                         columnNumber: 15
                                     }, this),
-                                    "Remove"
+                                    "Remove from your patients"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/patients/[id]/page.tsx",

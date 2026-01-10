@@ -1298,6 +1298,8 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$clien
 ;
 const usersApi = {
     getAll: async ()=>{
+        // Si tu axiosClient ya tiene /api/v1 en la baseURL, quita /api/v1 de aquí.
+        // Si no, déjalo como está. Asumo que está funcionando así:
         const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["axiosClient"].get("/api/v1/users");
         return response.data;
     },
@@ -1309,6 +1311,7 @@ const usersApi = {
         const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["axiosClient"].post("/api/v1/users", user);
         return response.data;
     },
+    // Admin actualiza a otro usuario
     update: async (id, user)=>{
         const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["axiosClient"].put(`/api/v1/users/${id}`, user);
         return response.data;
@@ -1318,10 +1321,14 @@ const usersApi = {
             active
         });
     },
-    // Mantenemos getMe aquí por compatibilidad si se usa directamente,
-    // aunque AuthContext usa el de auth-api.
+    // Obtener datos del usuario logueado
     getMe: async ()=>{
         const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["axiosClient"].get("/api/v1/users/me");
+        return response.data;
+    },
+    // NUEVO: Actualizar perfil propio (incluyendo contraseña)
+    updateProfile: async (data)=>{
+        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["axiosClient"].put("/api/v1/users/me", data);
         return response.data;
     }
 };

@@ -1,5 +1,6 @@
 import { axiosClient } from "./axios-client"
 
+// Estructura EXACTA según tu PatientResponse.java
 export interface Patient {
   id: number
   fullName: string
@@ -7,8 +8,9 @@ export interface Patient {
   phone: string | null
   email: string | null
   address: string | null
-  generalNotes: string | null
+  generalNotes: string | null // Correcto: coincide con tu backend
   active: boolean
+  // Correcto: coincide con List<TherapistSummary>
   therapists: Array<{
     id: number
     fullName: string
@@ -19,7 +21,7 @@ export interface Patient {
 
 export interface CreatePatientRequest {
   fullName: string
-  dateOfBirth: string
+  dateOfBirth: string // Importante: enviar YYYY-MM-DD
   phone?: string
   email?: string
   address?: string
@@ -35,9 +37,22 @@ export interface UpdatePatientRequest {
   generalNotes?: string
 }
 
+// Función auxiliar para que Java no rechace la fecha
+const formatDateForJava = (dateString: string | undefined): string => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  return date.toISOString().split('T')[0]; // "2024-01-01"
+}
+
 export const patientsApi = {
-  async getAll(): Promise<Patient[]> {
-    const response = await axiosClient.get<Patient[]>("/api/v1/patients")
+  async getAll(params?: { assignedToMe?: boolean; query?: string }): Promise<Patient[]> {
+    const response = await axiosClient.get<Patient[]>("/api/v1/patients", {
+      params: { 
+        query: params?.query, // Correcto: tu controller usa @RequestParam String query
+        assignedToMe: params?.assignedToMe 
+      }
+    })
     return response.data
   },
 
@@ -47,12 +62,21 @@ export const patientsApi = {
   },
 
   async create(data: CreatePatientRequest): Promise<Patient> {
-    const response = await axiosClient.post<Patient>("/api/v1/patients", data)
+    // Aplicamos el formateo de fecha aquí
+    const payload = {
+        ...data,
+        dateOfBirth: formatDateForJava(data.dateOfBirth)
+    };
+    const response = await axiosClient.post<Patient>("/api/v1/patients", payload)
     return response.data
   },
 
   async update(id: number, data: UpdatePatientRequest): Promise<Patient> {
-    const response = await axiosClient.put<Patient>(`/api/v1/patients/${id}`, data)
+    const payload = { ...data };
+    if (payload.dateOfBirth) {
+        payload.dateOfBirth = formatDateForJava(payload.dateOfBirth);
+    }
+    const response = await axiosClient.put<Patient>(`/api/v1/patients/${id}`, payload)
     return response.data
   },
 
@@ -73,7 +97,6 @@ export const patientsApi = {
   },
 
   async unassignFromMe(patientId: number): Promise<void> {
-  await axiosClient.delete(`/api/v1/patients/${patientId}/assign`)
-},
-
+    await axiosClient.delete(`/api/v1/patients/${patientId}/assign`)
+  },
 }

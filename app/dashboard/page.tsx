@@ -77,7 +77,7 @@ function DashboardContent() {
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           {/* CAMBIO: Usamos user.fullName, y si no existe (por seguridad) el username */}
-          <h1 className="text-3xl font-bold tracking-tight">{greeting}, {user?.fullName || user?.username}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{greeting}, {user?.fullName}</h1>
           <p className="text-muted-foreground">Here's what's happening in your clinic today.</p>
         </div>
         <div className="flex gap-2">

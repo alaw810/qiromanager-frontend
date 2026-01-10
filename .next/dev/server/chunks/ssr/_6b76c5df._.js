@@ -8,9 +8,21 @@ __turbopack_context__.s([
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/api/axios-client.ts [app-ssr] (ecmascript)");
 ;
+// Función auxiliar para que Java no rechace la fecha
+const formatDateForJava = (dateString)=>{
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return date.toISOString().split('T')[0]; // "2024-01-01"
+};
 const patientsApi = {
-    async getAll () {
-        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["axiosClient"].get("/api/v1/patients");
+    async getAll (params) {
+        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["axiosClient"].get("/api/v1/patients", {
+            params: {
+                query: params?.query,
+                assignedToMe: params?.assignedToMe
+            }
+        });
         return response.data;
     },
     async getById (id) {
@@ -18,11 +30,22 @@ const patientsApi = {
         return response.data;
     },
     async create (data) {
-        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["axiosClient"].post("/api/v1/patients", data);
+        // Aplicamos el formateo de fecha aquí
+        const payload = {
+            ...data,
+            dateOfBirth: formatDateForJava(data.dateOfBirth)
+        };
+        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["axiosClient"].post("/api/v1/patients", payload);
         return response.data;
     },
     async update (id, data) {
-        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["axiosClient"].put(`/api/v1/patients/${id}`, data);
+        const payload = {
+            ...data
+        };
+        if (payload.dateOfBirth) {
+            payload.dateOfBirth = formatDateForJava(payload.dateOfBirth);
+        }
+        const response = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2f$axios$2d$client$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["axiosClient"].put(`/api/v1/patients/${id}`, payload);
         return response.data;
     },
     async updateStatus (id, active) {
@@ -998,7 +1021,7 @@ function DashboardContent() {
                                 children: [
                                     greeting,
                                     ", ",
-                                    user?.fullName || user?.username
+                                    user?.fullName
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/dashboard/page.tsx",
