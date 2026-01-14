@@ -220,7 +220,7 @@ export default function TreatmentSessionsTab({ patientId }: TreatmentSessionsTab
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Diagnosis</FormLabel>
-                      <FormControl><Input placeholder="Acute pain..." {...field} /></FormControl>
+                      <FormControl><Input placeholder="Acute pain..." className="bg-white" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -231,7 +231,7 @@ export default function TreatmentSessionsTab({ patientId }: TreatmentSessionsTab
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Procedure</FormLabel>
-                      <FormControl><Textarea placeholder="Massage..." className="resize-none" {...field} /></FormControl>
+                      <FormControl><Textarea placeholder="Massage..." className="resize-none bg-white" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -242,7 +242,7 @@ export default function TreatmentSessionsTab({ patientId }: TreatmentSessionsTab
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Notes</FormLabel>
-                      <FormControl><Textarea placeholder="Optional..." {...field} /></FormControl>
+                      <FormControl><Textarea placeholder="Optional..." className="bg-white" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

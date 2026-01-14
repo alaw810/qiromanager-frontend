@@ -46,11 +46,6 @@ export const usersApi = {
     return response.data
   },
 
-  create: async (user: CreateUserRequest): Promise<User> => {
-    const response = await axiosClient.post<User>("/api/v1/users", user)
-    return response.data
-  },
-
   // Admin actualiza a otro usuario
   update: async (id: number, user: UpdateUserRequest): Promise<User> => {
     const response = await axiosClient.put<User>(`/api/v1/users/${id}`, user)

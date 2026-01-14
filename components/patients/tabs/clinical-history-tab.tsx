@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react"; // 1. Importamos useRef
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,7 +16,9 @@ import {
   Calendar,
   Filter, 
   Search, 
-  XCircle 
+  XCircle,
+  Upload, // 2. Nuevos iconos para el input de archivo
+  X 
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -93,6 +95,9 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
   const [records, setRecords] = useState<ClinicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  // 3. Referencia al input nativo oculto
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   // Filtros
@@ -124,6 +129,20 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
     if (patientId) loadRecords();
   }, [patientId]);
 
+  // 4. Nuevos handlers para el archivo
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     try {
       await clinicalRecordsApi.create(
@@ -136,7 +155,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
       toast({ title: "Record created", description: "The clinical note has been saved successfully." });
       setIsDialogOpen(false);
       form.reset({ recordType: "EVOLUTION", content: "" });
-      setSelectedFile(null);
+      handleClearFile(); // Limpiamos el archivo usando el helper
       loadRecords();
     } catch (error) {
       console.error("Error creating record:", error);
@@ -148,20 +167,15 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
     return RECORD_TYPES[type as keyof typeof RECORD_TYPES] || type.replace(/_/g, " ");
   };
 
-  // --- PARSEADOR VISUAL MEJORADO ---
   const renderFormattedContent = (content: string) => {
     if (!content) return null;
-
     const lines = content.split('\n');
-
     return (
       <div className="space-y-3 text-sm text-gray-700 mt-2">
         {lines.map((line, index) => {
           const trimmedLine = line.trim();
           if (!trimmedLine) return null;
 
-          // CASO 1: Título de sesión (gris pequeño)
-          // Detecta "Treatment Session performed..."
           if (trimmedLine.toLowerCase().includes("treatment session performed")) {
              return (
                <div key={index} className="pb-2 border-b border-dashed border-gray-200 mb-2">
@@ -172,19 +186,13 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
              );
           }
 
-          // CASO 2: "Session Notes:" (Lo separamos si aparece pegado)
-          // Si la línea empieza por "Session Notes:", lo tratamos como título
           if (trimmedLine.toLowerCase().startsWith("session notes:")) {
-             // Extraemos lo que venga después de los dos puntos
              const restOfLine = trimmedLine.substring("Session Notes:".length).trim();
-             
              return (
                <div key={index}>
                   <p className="text-xs font-bold text-gray-500 mb-1">SESSION NOTES</p>
-                  {/* Si hay texto después (ej: "Session Notes: Diagnóstico..."), lo renderizamos debajo recursivamente o directo */}
                   {restOfLine && (
                     <div className="pl-0 mt-1">
-                      {/* Llamada recursiva simple para procesar el resto si tiene estructura */}
                       {renderFormattedContent(restOfLine)} 
                     </div>
                   )}
@@ -192,14 +200,10 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
              );
           }
 
-          // CASO 3: Clave: Valor (Diagnóstico, Procedimiento, etc.)
-          // Detecta [Clave]: Valor ó Clave: Valor
           const match = trimmedLine.match(/^(?:\[?([A-Za-zÁ-Úá-ú\s]+)\]?):\s*(.+)/);
-          
           if (match) {
-            const label = match[1].trim(); // Ej: Diagnosis
-            const value = match[2].trim(); // Ej: Gripe
-
+            const label = match[1].trim(); 
+            const value = match[2].trim(); 
             return (
               <div key={index} className="flex flex-col sm:flex-row sm:items-start sm:gap-4 py-1">
                 <span className="font-semibold text-gray-900 min-w-30 shrink-0 text-right sm:text-left">
@@ -209,15 +213,12 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
               </div>
             );
           }
-
-          // CASO 4: Texto normal
           return <p key={index} className="leading-relaxed pl-1">{trimmedLine}</p>;
         })}
       </div>
     );
   };
 
-  // --- FILTRADO ---
   const filteredRecords = records.filter((record) => {
     const matchesType = filterType === "ALL" || record.recordType === filterType;
     const searchLower = searchTerm.toLowerCase();
@@ -254,7 +255,7 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
                     <FormItem>
                       <FormLabel>Record Type</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                         <SelectContent>
                           {Object.entries(RECORD_TYPES).map(([key, label]) => (
                             <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -272,16 +273,55 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
                     <FormItem>
                       <FormLabel>Content</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Type notes..." className="min-h-37.5" {...field} />
+                        <Textarea placeholder="Type notes..." className="min-h-37.5 bg-white" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormItem>
+                
+                {/* 5. SECCIÓN DE ARCHIVO MODIFICADA (Input Fantasma) */}
+                <div className="space-y-2">
                   <FormLabel>Attachment</FormLabel>
-                  <Input type="file" accept="image/*,.pdf" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
-                </FormItem>
+                  
+                  {/* Input Nativo Oculto */}
+                  <Input 
+                    type="file" 
+                    accept="image/*,.pdf" 
+                    className="hidden" 
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                  />
+
+                  {/* UI Personalizada */}
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button" 
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()} 
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {selectedFile ? "Change File" : "Choose File"}
+                    </Button>
+
+                    <div className="text-sm text-muted-foreground italic truncate max-w-50">
+                      {selectedFile ? selectedFile.name : "No file selected"}
+                    </div>
+
+                    {selectedFile && (
+                        <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={handleClearFile}
+                        >
+                            <X className="h-4 w-4"/>
+                        </Button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Note

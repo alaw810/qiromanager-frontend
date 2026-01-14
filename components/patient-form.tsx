@@ -139,7 +139,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
                 <FormItem>
                   <FormLabel>Phone</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="+34 600 000 000" {...field} />
+                    <Input type="tel" placeholder="600 000 000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -23,7 +23,7 @@ import { PrivateRoute } from "@/components/auth/private-route"
 import { useAuth } from "@/contexts/auth-context"
 import { patientsApi, type Patient } from "@/lib/api/patients-api"
 import { getErrorMessage } from "@/lib/api/axios-client"
-import { useToast } from "@/hooks/use-toast" // Asegúrate que la ruta sea correcta según tu proyecto
+import { useToast } from "@/hooks/use-toast"
 import {
   Loader2,
   Edit,
@@ -42,7 +42,7 @@ import {
 } from "lucide-react"
 import { PatientDetailSkeleton } from "@/components/patients/patient-detail-skeleton"
 
-// Importamos los componentes de las nuevas pestañas
+// Importing tab components
 import ClinicalHistoryTab from "@/components/patients/tabs/clinical-history-tab"
 import TreatmentSessionsTab from "@/components/patients/tabs/treatment-sessions-tab"
 
@@ -153,7 +153,7 @@ function PatientDetailsContent() {
         <Link href="/patients">
           <Button variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver al listado
+            Back to List
           </Button>
         </Link>
       </div>
@@ -163,7 +163,7 @@ function PatientDetailsContent() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 animate-in fade-in-50 duration-500">
 
-      {/* HEADER CARD - Siempre visible */}
+      {/* HEADER CARD - Always Visible */}
       <div className="mb-6 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between bg-card p-6 rounded-xl border shadow-sm">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -171,7 +171,7 @@ function PatientDetailsContent() {
               {patient.fullName}
             </h1>
             <Badge variant={patient.active ? "default" : "secondary"}>
-              {patient.active ? "Activo" : "Inactivo"}
+              {patient.active ? "Active" : "Inactive"}
             </Badge>
           </div>
           <div className="text-muted-foreground text-sm flex gap-4">
@@ -185,21 +185,21 @@ function PatientDetailsContent() {
           {!isAlreadyAssigned && (
             <Button variant="secondary" onClick={handleAssignToMe} disabled={assignLoading}>
               {assignLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-              Asignarme
+              Assign to Me
             </Button>
           )}
 
           <Link href={`/patients/${patient.id}/edit`}>
             <Button variant="outline">
               <Edit className="mr-2 h-4 w-4" />
-              Editar
+              Edit
             </Button>
           </Link>
 
           {isAlreadyAssigned && (
             <Button variant="destructive" onClick={() => setIsUnassignDialogOpen(true)}>
               <UserX className="mr-2 h-4 w-4" />
-              Dejar de tratar
+              Stop Treating
             </Button>
           )}
 
@@ -213,26 +213,26 @@ function PatientDetailsContent() {
               {statusLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : patient.active ? (
-                "Desactivar"
+                "Deactivate"
               ) : (
-                <span className="flex items-center text-green-600"><UserCheck className="mr-2 h-4 w-4" /> Activar</span>
+                <span className="flex items-center text-green-600"><UserCheck className="mr-2 h-4 w-4" /> Activate</span>
               )}
             </Button>
           )}
         </div>
       </div>
 
-      {/* TABS PRINCIPALES */}
+      {/* MAIN TABS */}
       <Tabs defaultValue="details" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3 lg:w-100">
           <TabsTrigger value="details">General</TabsTrigger>
-          <TabsTrigger value="history">Historial</TabsTrigger>
-          <TabsTrigger value="treatments">Sesiones</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="treatments">Sessions</TabsTrigger>
         </TabsList>
         
         <Separator />
 
-        {/* TAB 1: DETALLES GENERALES (Lo que ya tenías) */}
+        {/* TAB 1: GENERAL DETAILS */}
         <TabsContent value="details" className="space-y-4 pt-4">
           <div className="grid gap-6 md:grid-cols-2">
             
@@ -241,14 +241,14 @@ function PatientDetailsContent() {
               <Card className="h-full">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <User className="h-5 w-5" /> Información Personal
+                    <User className="h-5 w-5" /> Personal Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-[30px_1fr] items-start">
                     <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium">Fecha Nacimiento</p>
+                      <p className="text-sm font-medium">Date of Birth</p>
                       <p className="text-sm text-muted-foreground">{formatDate(patient.dateOfBirth)}</p>
                     </div>
                   </div>
@@ -256,8 +256,8 @@ function PatientDetailsContent() {
                   <div className="grid grid-cols-[30px_1fr] items-start">
                     <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium">Teléfono</p>
-                      <p className="text-sm text-muted-foreground">{patient.phone || "No registrado"}</p>
+                      <p className="text-sm font-medium">Phone</p>
+                      <p className="text-sm text-muted-foreground">{patient.phone || "Not registered"}</p>
                     </div>
                   </div>
 
@@ -265,7 +265,7 @@ function PatientDetailsContent() {
                     <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="text-sm font-medium">Email</p>
-                      <p className="text-sm text-muted-foreground">{patient.email || "No registrado"}</p>
+                      <p className="text-sm text-muted-foreground">{patient.email || "Not registered"}</p>
                     </div>
                   </div>
 
@@ -273,7 +273,7 @@ function PatientDetailsContent() {
                     <div className="grid grid-cols-[30px_1fr] items-start">
                       <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium">Dirección</p>
+                        <p className="text-sm font-medium">Address</p>
                         <p className="text-sm text-muted-foreground">{patient.address}</p>
                       </div>
                     </div>
@@ -287,7 +287,7 @@ function PatientDetailsContent() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Users className="h-5 w-5" /> Equipo Asignado
+                    <Users className="h-5 w-5" /> Assigned Team
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -296,12 +296,12 @@ function PatientDetailsContent() {
                       {patient.therapists.map((therapist) => (
                         <Badge key={therapist.id} variant="secondary" className="px-3 py-1">
                           {therapist.fullName}
-                          {therapist.id === user?.id && " (Tú)"}
+                          {therapist.id === user?.id && " (You)"}
                         </Badge>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Sin terapeutas asignados.</p>
+                    <p className="text-sm text-muted-foreground">No therapists assigned.</p>
                   )}
                 </CardContent>
               </Card>
@@ -309,7 +309,7 @@ function PatientDetailsContent() {
               {patient.generalNotes && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Notas Generales</CardTitle>
+                    <CardTitle className="text-lg">General Notes</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="bg-muted/30 p-4 rounded-md text-sm text-foreground/80 whitespace-pre-wrap border">
@@ -322,23 +322,23 @@ function PatientDetailsContent() {
           </div>
         </TabsContent>
 
-        {/* TAB 2: HISTORIAL CLÍNICO (Nuevo) */}
+        {/* TAB 2: CLINICAL HISTORY */}
         <TabsContent value="history" className="pt-4">
            <div className="flex flex-col gap-4">
               <div className="flex items-center text-muted-foreground mb-2">
                 <FileText className="w-4 h-4 mr-2" />
-                <span className="text-sm">Registro de notas evolutivas e informes médicos.</span>
+                <span className="text-sm">Record of progress notes and medical reports.</span>
               </div>
               <ClinicalHistoryTab patientId={patient.id} />
            </div>
         </TabsContent>
 
-        {/* TAB 3: SESIONES DE TRATAMIENTO (Nuevo) */}
+        {/* TAB 3: TREATMENT SESSIONS */}
         <TabsContent value="treatments" className="pt-4">
             <div className="flex flex-col gap-4">
               <div className="flex items-center text-muted-foreground mb-2">
                 <Activity className="w-4 h-4 mr-2" />
-                <span className="text-sm">Listado cronológico de intervenciones realizadas.</span>
+                <span className="text-sm">Chronological list of interventions performed.</span>
               </div>
               <TreatmentSessionsTab patientId={patient.id} />
             </div>
@@ -349,14 +349,14 @@ function PatientDetailsContent() {
       <AlertDialog open={isUnassignDialogOpen} onOpenChange={setIsUnassignDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Dejar de tratar al paciente?</AlertDialogTitle>
+            <AlertDialogTitle>Stop treating patient?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esto eliminará a <strong>{patient.fullName}</strong> de tu lista de pacientes activos.
-              No se borrarán sus datos ni su historial, simplemente dejarás de estar asignado como su terapeuta.
+              This will remove <strong>{patient.fullName}</strong> from your active patients list.
+              Their data and history will remain intact; you will simply no longer be assigned as their therapist.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={unassignLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={unassignLoading}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault()
@@ -366,7 +366,7 @@ function PatientDetailsContent() {
               disabled={unassignLoading}
             >
               {unassignLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmar
+              Confirm
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

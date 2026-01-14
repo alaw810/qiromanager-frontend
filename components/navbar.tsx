@@ -10,14 +10,12 @@ import {
   Menu, 
   X, 
   User, 
-  FileText // <-- NUEVO ICONO
+  FileText,
+  GripVertical,
+  Activity
 } from "lucide-react"
 import { useState } from "react"
 
-/**
- * Clinical UI Navigation Bar
- * Clean, modern, soft blue, calm healthcare aesthetic
- */
 export function NavBar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -31,9 +29,10 @@ export function NavBar() {
 
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/dashboard" className="text-xl font-semibold text-primary tracking-tight flex items-center gap-2">
-              {/* Opcional: Icono junto al logo */}
-              Qiromanager
+            <Link href="/dashboard" className="text-xl tracking-tight flex items-center hover:opacity-80 transition-opacity">
+              <span className="font-black text-primary text-2xl">Q</span>
+              <span className="font-bold text-foreground">iro</span>
+              <span className="font-light text-muted-foreground ml-0.5">manager</span>
             </Link>
           </div>
 
@@ -41,7 +40,6 @@ export function NavBar() {
           <div className="hidden md:flex md:items-center md:gap-4 lg:gap-6">
             <NavLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
             <NavLink href="/patients" icon={User} label="Patients" />
-            {/* NUEVO BOTÓN: Clinical Records Hub */}
             <NavLink href="/dashboard/records" icon={FileText} label="Clinical Records" />
             
             {isAdmin && <NavLink href="/users" icon={Users} label="Users" />}
@@ -49,10 +47,9 @@ export function NavBar() {
             {/* Profile + Logout */}
             <div className="ml-4 flex items-center gap-3 border-l border-border pl-4">
               <Link 
-                href="/dashboard/profile" // Actualizado a la ruta correcta si la moviste
+                href="/profile"
                 className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
               >
-                {/* Avatar circular simple con inicial */}
                 <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
                   {user?.username?.charAt(0).toUpperCase()}
                 </div>
@@ -90,7 +87,6 @@ export function NavBar() {
 
               <MobileLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" onClick={() => setMobileMenuOpen(false)} />
               <MobileLink href="/patients" icon={User} label="Patients" onClick={() => setMobileMenuOpen(false)} />
-              {/* NUEVO BOTÓN MOVIL */}
               <MobileLink href="/dashboard/records" icon={FileText} label="Clinical Records" onClick={() => setMobileMenuOpen(false)} />
               
               {isAdmin && (
@@ -100,7 +96,7 @@ export function NavBar() {
               {/* Mobile Footer */}
               <div className="mt-3 border-t border-border pt-3">
                 <Link 
-                  href="/dashboard/profile"
+                  href="/profile"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary mb-2"
                 >
