@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, Suspense } from "react"
 import Link from "next/link"
-import { useSearchParams, useRouter } from "next/navigation" // Importamos hooks de navegación modernos
+import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
@@ -20,7 +20,9 @@ import { PatientGridSkeleton, PatientListSkeleton } from "@/components/patients/
 export default function PatientsPage() {
   return (
     <PrivateRoute>
-      <PatientsPageContent />
+      <Suspense>
+        <PatientsPageContent />
+      </Suspense>
     </PrivateRoute>
   )
 }

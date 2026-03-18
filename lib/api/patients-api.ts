@@ -47,13 +47,15 @@ const formatDateForJava = (dateString: string | undefined): string => {
 
 export const patientsApi = {
   async getAll(params?: { assignedToMe?: boolean; query?: string }): Promise<Patient[]> {
-    const response = await axiosClient.get<Patient[]>("/api/v1/patients", {
-      params: { 
-        query: params?.query, // Correcto: tu controller usa @RequestParam String query
-        assignedToMe: params?.assignedToMe 
+    const response = await axiosClient.get<any>("/api/v1/patients", {
+      params: {
+        query: params?.query,
+        assignedToMe: params?.assignedToMe
       }
     })
-    return response.data
+    // El backend puede devolver un array o un objeto paginado { content: [...] }
+    const raw = response.data
+    return Array.isArray(raw) ? raw : (raw?.content ?? raw?.patients ?? [])
   },
 
   async getById(id: number): Promise<Patient> {
@@ -85,10 +87,11 @@ export const patientsApi = {
   },
 
   async search(query: string): Promise<Patient[]> {
-    const response = await axiosClient.get<Patient[]>("/api/v1/patients/search", {
+    const response = await axiosClient.get<any>("/api/v1/patients/search", {
       params: { query },
     })
-    return response.data
+    const raw = response.data
+    return Array.isArray(raw) ? raw : (raw?.content ?? raw?.patients ?? [])
   },
 
   async assignToMe(patientId: number): Promise<Patient> {

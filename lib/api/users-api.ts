@@ -34,10 +34,9 @@ export interface UpdateProfileRequest {
 }
 
 export const usersApi = {
-  getAll: async (): Promise<User[]> => {
-    // Si tu axiosClient ya tiene /api/v1 en la baseURL, quita /api/v1 de aquí.
-    // Si no, déjalo como está. Asumo que está funcionando así:
-    const response = await axiosClient.get<User[]>("/api/v1/users")
+  getAll: async (role?: "ADMIN" | "USER"): Promise<User[]> => {
+    const params = role ? { role } : undefined
+    const response = await axiosClient.get<User[]>("/api/v1/users", { params })
     return response.data
   },
 

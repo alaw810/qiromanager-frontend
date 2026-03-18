@@ -16,6 +16,11 @@ export interface CreateSessionParams {
   date: string; // ISO String
 }
 
+export interface UpdateSessionRequest {
+  sessionDate: string; // ISO String
+  notes: string;
+}
+
 export const treatmentSessionsApi = {
   
   create: async (params: CreateSessionParams) => {
@@ -41,8 +46,26 @@ export const treatmentSessionsApi = {
   },
 
   getByPatientId: async (patientId: number | string): Promise<TreatmentSession[]> => {
-    // Usamos el endpoint del backend que devuelve solo las sesiones de ESTE paciente
     const { data } = await axiosClient.get<TreatmentSession[]>(`/api/v1/patients/${patientId}/sessions`);
     return data;
+  },
+
+  getById: async (patientId: number | string, sessionId: number | string): Promise<TreatmentSession> => {
+    const { data } = await axiosClient.get<TreatmentSession>(
+      `/api/v1/patients/${patientId}/sessions/${sessionId}`
+    );
+    return data;
+  },
+
+  update: async (patientId: number | string, sessionId: number | string, request: UpdateSessionRequest): Promise<TreatmentSession> => {
+    const { data } = await axiosClient.put<TreatmentSession>(
+      `/api/v1/patients/${patientId}/sessions/${sessionId}`,
+      request
+    );
+    return data;
+  },
+
+  delete: async (patientId: number | string, sessionId: number | string): Promise<void> => {
+    await axiosClient.delete(`/api/v1/patients/${patientId}/sessions/${sessionId}`);
   }
 };

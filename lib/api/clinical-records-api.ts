@@ -22,6 +22,25 @@ export const clinicalRecordsApi = {
     }));
   },
 
+  // GET: Obtener un registro individual
+  getById: async (patientId: number | string, recordId: number | string): Promise<ClinicalRecord> => {
+    const { data } = await axiosClient.get<any>(`/api/v1/patients/${patientId}/clinical-records/${recordId}`);
+    return {
+      id: data.id,
+      patientId: data.patientId,
+      therapistName: data.therapistName,
+      recordType: data.recordType || data.type,
+      content: data.content,
+      createdAt: data.createdAt,
+      attachments: data.attachments || []
+    };
+  },
+
+  // DELETE: Eliminar registro (solo ADMIN)
+  delete: async (patientId: number | string, recordId: number | string): Promise<void> => {
+    await axiosClient.delete(`/api/v1/patients/${patientId}/clinical-records/${recordId}`);
+  },
+
   // POST: Crear registro con FormData
   create: async (patientId: number | string, content: string, type: string, file?: File | null): Promise<ClinicalRecord> => {
     const formData = new FormData();

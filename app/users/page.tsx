@@ -16,7 +16,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Edit, UserCog, Shield, ShieldAlert, CheckCircle2, XCircle } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Edit, UserCog, Shield, ShieldAlert, CheckCircle2, XCircle, Filter } from "lucide-react"
 import { UsersListSkeleton } from "@/components/users/users-loading-skeleton"
 
 export default function UsersPage() {
@@ -31,12 +38,13 @@ function UsersPageContent() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [roleFilter, setRoleFilter] = useState<"ALL" | "ADMIN" | "USER">("ALL")
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (role?: "ADMIN" | "USER") => {
     setLoading(true)
     setError(null)
     try {
-      const data = await usersApi.getAll()
+      const data = await usersApi.getAll(role)
       setUsers(data)
     } catch (err) {
       setError(getErrorMessage(err))
@@ -46,8 +54,8 @@ function UsersPageContent() {
   }, [])
 
   useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers])
+    fetchUsers(roleFilter === "ALL" ? undefined : roleFilter)
+  }, [fetchUsers, roleFilter])
 
   if (loading) {
     return (
@@ -70,7 +78,21 @@ function UsersPageContent() {
             Manage therapist access and roles.
           </p>
         </div>
-        {/* Aquí podrías poner un botón de "Invite User" si tuvieras esa función */}
+        <div className="w-48">
+          <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as "ALL" | "ADMIN" | "USER")}>
+            <SelectTrigger className="bg-white">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <SelectValue placeholder="Filter by role" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Roles</SelectItem>
+              <SelectItem value="ADMIN">Admin</SelectItem>
+              <SelectItem value="USER">User</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error && (

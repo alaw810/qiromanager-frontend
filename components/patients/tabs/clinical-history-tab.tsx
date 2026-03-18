@@ -6,19 +6,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
 import { enUS } from "date-fns/locale"; 
-import { 
-  FileText, 
-  Plus, 
-  Loader2, 
-  Paperclip, 
-  Download, 
+import {
+  FileText,
+  Plus,
+  Loader2,
+  Paperclip,
+  Download,
   Stethoscope,
   Calendar,
-  Filter, 
-  Search, 
+  Filter,
+  Search,
   XCircle,
-  Upload, // 2. Nuevos iconos para el input de archivo
-  X 
+  Upload,
+  X,
+  Trash2
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -45,11 +46,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast"; 
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 
 import { clinicalRecordsApi } from "@/lib/api/clinical-records-api";
@@ -100,11 +112,17 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
+  // Delete
+  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Filtros
   const [filterType, setFilterType] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -160,6 +178,21 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
     } catch (error) {
       console.error("Error creating record:", error);
       toast({ variant: "destructive", title: "Error", description: "There was a problem saving the note." });
+    }
+  };
+
+  const handleDeleteRecord = async () => {
+    if (!deletingRecordId) return;
+    try {
+      setIsDeleting(true);
+      await clinicalRecordsApi.delete(patientId, deletingRecordId);
+      toast({ title: "Record deleted", description: "The clinical record has been removed." });
+      setDeletingRecordId(null);
+      loadRecords();
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Could not delete the record." });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -333,6 +366,25 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
         </Dialog>
       </div>
 
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingRecordId} onOpenChange={(open) => !open && setDeletingRecordId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete clinical record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The clinical record will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteRecord} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Filtros */}
       <div className="flex flex-col md:flex-row gap-3 items-center bg-muted/20 p-3 rounded-lg border">
         <div className="relative w-full md:w-auto md:flex-1">
@@ -394,9 +446,16 @@ export default function ClinicalHistoryTab({ patientId }: ClinicalHistoryTabProp
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 self-start sm:self-center">
-                      <Stethoscope className="w-3.5 h-3.5 mr-2 text-slate-500" />
-                      <span className="text-xs font-medium text-slate-700">{record.therapistName}</span>
+                    <div className="flex items-center gap-2 self-start sm:self-center">
+                      <div className="flex items-center bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+                        <Stethoscope className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                        <span className="text-xs font-medium text-slate-700">{record.therapistName}</span>
+                      </div>
+                      {isAdmin && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeletingRecordId(record.id)} title="Delete record">
+                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                   
